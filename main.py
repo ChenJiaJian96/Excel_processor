@@ -3,6 +3,7 @@ from tkinter import *
 from tkinter import filedialog
 from tkinter import messagebox
 from xlrd import *
+from xlwt import *
 from time import *
 from collections import Counter
 
@@ -69,7 +70,30 @@ class MyGUI:
         else:
             self.data = ExcelMaster(temp_data)
             self.write_log("打开文件：" + file_name)
+            self.check_file_integrity()
+
+    # 检查文件完整性
+    def check_file_integrity(self):
+        self.write_log("开始检查文件完整性")
+        flag = 0
+        if self.data.col_index('联系人') == -1:
+            self.write_log("打开的文件中找不到列：“联系人”，无法导出员工名单")
+            flag = 1
+        if self.data.col_index('结束代码') == -1:
+            self.write_log("打开的文件中找不到列：“结束代码”, 无法计算员工根本解决率")
+            flag = 1
+
+        if flag == 0:
+            self.write_log("该文件完整，开始选择考勤名单。")
             self.setup_staff_list()
+        else:
+            self.write_log("文件不完整，建议检查文件完整性后重启系统。")
+            self.set_button_disabled()
+
+    # 使按钮失效，无法使用
+    def set_button_disabled(self):
+        self.open_file_button.config(state=DISABLED)
+        self.export_file_button.config(state=DISABLED)
 
     # 设置员工列表
     def setup_staff_list(self):
@@ -83,13 +107,10 @@ class MyGUI:
 
     # 开始选择员工列表
     def open_staff_list(self):
-        name_list = self.data.name_list()
-        if name_list is None:
-            self.write_log("打开的文件中找不到列：“联系人”")
-        else:
-            inputDialog = MyDialog(name_list)
-            self.init_window.wait_window(inputDialog.rootWindow)  # 这一句很重要！！！
-            return inputDialog.result_list
+        name_list = self.data.get_name_list()
+        inputDialog = MyDialog(name_list)
+        self.init_window.wait_window(inputDialog.rootWindow)  # 这一句很重要！！！
+        return inputDialog.result_list
 
     # 导出文件
     def export_file(self):
@@ -101,8 +122,49 @@ class MyGUI:
 
     # 处理数据
     def proceed_data(self):
+        self.get_rate_all_solved()
         self.write_log("处理数据")
 
+    # No.4:获取"事件成功解决率"的数据
+    def get_rate_all_solved(self):
+        temp_dict = self.data.get_name_dict()
+        name_dict = {}
+        # 仅保存需要考核的员工
+        for name in self.examiner_list:
+            try:
+                name_dict[name] = temp_dict[name]
+            except KeyError:
+                pass
+        for name in name_dict.keys():
+            total_num = name_dict[name]  # 事件总数
+            cur_num = self.data.get_num_all_solved(name)  # 根本解决事件数
+            rate = float(cur_num / total_num)
+            score = self.cal_score_all_solved(rate)
+            name_dict[name] = [total_num, cur_num, rate, score]
+        # 输出结果
+        for name in name_dict.keys():
+            print(name + str(name_dict[name]))
+
+        wb = Workbook(encoding='ascii')
+        ws = wb.add_sheet("员工根据解决率")
+        ws.write(0, 0, "员工姓名")
+        ws.write(0, 1, "事件完成数")
+        ws.write(0, 2, "事件根本解决数")
+        ws.write(0, 3, "事件根本解决率")
+        ws.write(0, 4, "该项得分")
+        x = 1
+        y = 0
+        for name in name_dict.keys():
+            ws.write(x, y, name)
+            y = y + 1
+            for item in name_dict[name]:
+                ws.write(x, y, item)
+                y = y + 1
+            x = x + 1
+            y = 0
+        wb.save('C:\\Users\\Charlie\\Desktop\\test.xls')
+
+    # 添加日志
     def write_log(self, msg):  # 日志动态打印
         current_time = self.get_current_time()
         log_msg = str(current_time) + " " + str(msg) + "\n"  # 换行
@@ -116,6 +178,19 @@ class MyGUI:
     def get_current_time():
         current_time = strftime('%Y-%m-%d %H:%M:%S', localtime(time()))
         return current_time
+
+    # 计算根本解决率的得分
+    def cal_score_all_solved(self, rate):
+        if rate >= 0.995:
+            return 100
+        elif rate >= 0.98:
+            return 90
+        elif rate >= 0.8:
+            return 80
+        elif rate >= 0.7:
+            return 70
+        else:
+            return 10 * int(rate / 0.1)
 
 
 # 弹窗(采用软耦合的方式接收数据）
@@ -152,7 +227,7 @@ class MyDialog:
         self.del_button.place(relx=0.4, rely=0.47, relwidth=0.2, relheight=0.12)
         self.all_del_button.place(relx=0.4, rely=0.64, relwidth=0.2, relheight=0.12)
         self.confirm_button.place(relx=0.4, rely=0.81, relwidth=0.2, relheight=0.12)
-        # TODO: 对名单进行初步处理
+        # TODO: 对名单进行初步处理，去除能删掉的脏数据
 
         # 对名单进行排序，优化用户体验
         # TODO：排序规则存在问题
@@ -238,23 +313,30 @@ class ExcelMaster:
     # index:第index个sheet,入参需要检查
     def excel_table_by_index(self, index=0):
         if self.data is None:
-            return "打开文件有误！"
+            return "文件为空，无法打开工作表！"
         else:
             self.table = self.data.sheet_by_index(index)
 
     # 返回表格的员工列表
-    def name_list(self):
+    def get_name_list(self):
         i = self.col_index('联系人')
-        if i < 0:
-            return None
-        else:
-            name_dict = Counter(self.table.col_values(i, start_rowx=1, end_rowx=None))
-            return list(name_dict.keys())
+        name_dict = Counter(self.table.col_values(i, start_rowx=1, end_rowx=None))
+        return list(name_dict.keys())
+
+    # 返回表格的员工完成事件数
+    def get_name_dict(self):
+        i = self.col_index('联系人')
+        name_dict = Counter(self.table.col_values(i, start_rowx=1, end_rowx=None))
+        return name_dict
+
+    # 返回员工“根本解决”的事件总数
+    def get_num_all_solved(self, name):
+        return 1
 
     # 计算某位员工的“事件平均相应时长”
     def ave_response_time(self):
         result = dict()
-        name_list = self.name_list()
+        name_list = self.get_name_list()
         name_dict = Counter(name_list)
         for name in name_dict.keys():
             count = name_dict.get(name)
@@ -266,7 +348,7 @@ class ExcelMaster:
         time2 = strptime(str2, '%Y/%m/%d %H:%M')
         return mktime(time2) - mktime(time1)
 
-    # 返回列索引
+    # 返回列名返回列索引
     def col_index(self, col_name):
         first_col_list = self.table.row_values(0)  # 第一行元素生成列表
         try:
