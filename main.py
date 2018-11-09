@@ -59,7 +59,8 @@ class MyGUI:
 
     # 打开文件
     def open_file(self):
-        file_name = filedialog.askopenfilename(title='打开文件', filetypes=[('All Files', '*')])
+        file_name = filedialog.askopenfilename(title='打开文件',
+                                               filetypes=[('表格文件', '*.xls; *.xlsx; *.et'), ('All Files', '*')])
         self.file_name = file_name
         try:
             temp_data = open_workbook(file_name)
@@ -88,12 +89,16 @@ class MyGUI:
             self.setup_staff_list()
         else:
             self.write_log("文件不完整，建议检查文件完整性后重启系统。")
-            self.set_button_disabled()
+            self.set_button_state(0)
 
     # 使按钮失效，无法使用
-    def set_button_disabled(self):
-        self.open_file_button.config(state=DISABLED)
-        self.export_file_button.config(state=DISABLED)
+    def set_button_state(self, i):
+        if i == 0:
+            self.open_file_button.config(state=DISABLED)
+            self.export_file_button.config(state=DISABLED)
+        elif i == 1:
+            self.open_file_button.config(state=ACTIVE)
+            self.export_file_button.config(state=ACTIVE)
 
     # 设置员工列表
     def setup_staff_list(self):
@@ -109,7 +114,9 @@ class MyGUI:
     def open_staff_list(self):
         name_list = self.data.get_name_list()
         inputDialog = MyDialog(name_list)
+        self.set_button_state(0)
         self.init_window.wait_window(inputDialog.rootWindow)  # 这一句很重要！！！
+        self.set_button_state(1)
         return inputDialog.result_list
 
     # 导出文件
@@ -118,12 +125,10 @@ class MyGUI:
             self.write_log("请先打开您需要处理的文件")
         else:
             self.proceed_data()
-            self.write_log("导出成功。")
 
     # 处理数据
     def proceed_data(self):
         self.get_rate_all_solved()
-        self.write_log("处理数据")
 
     # No.4:获取"事件成功解决率"的数据
     def get_rate_all_solved(self):
@@ -162,7 +167,15 @@ class MyGUI:
                 y = y + 1
             x = x + 1
             y = 0
-        wb.save('C:\\Users\\Charlie\\Desktop\\test.xls')
+        file_name = filedialog.asksaveasfilename(title="保存文件",
+                                                 filetype=[('表格文件', '*.xls')],
+                                                 defaultextension='.xls',
+                                                 initialfile="员工事件成功解决率")
+        if file_name:
+            wb.save(file_name)
+            self.write_log('文件保存至：' + file_name)
+        else:
+            self.write_log("文件名为空，导出中断。")
 
     # 添加日志
     def write_log(self, msg):  # 日志动态打印
@@ -308,10 +321,10 @@ class ExcelMaster:
         self.data = data  # 源文件
         self.table = None  # 保存当前正在处理的表格
         # 初始化表格
-        self.excel_table_by_index()
+        self.set_table(0)
 
     # index:第index个sheet,入参需要检查
-    def excel_table_by_index(self, index=0):
+    def set_table(self, index=0):
         if self.data is None:
             return "文件为空，无法打开工作表！"
         else:
@@ -331,7 +344,22 @@ class ExcelMaster:
 
     # 返回员工“根本解决”的事件总数
     def get_num_all_solved(self, name):
-        return 1
+        print("正在查询: " + name)
+        m = self.col_index('联系人')
+        n = self.col_index('结束代码')
+        name_list = list(self.table.col_values(m, start_rowx=1, end_rowx=None))
+        code_list = list(self.table.col_values(n, start_rowx=1, end_rowx=None))
+        print(name_list)
+        print(code_list)
+        print("length(name_list): " + str(len(name_list)))
+        print("length(code_list): " + str(len(code_list)))
+        # 遍历行
+        solved_num = 0
+        for i in range(len(name_list)):
+            if name_list[i] == name and code_list[i] == '根本解决':
+                solved_num += 1
+        print("solved_num: " + str(solved_num))
+        return solved_num
 
     # 计算某位员工的“事件平均相应时长”
     def ave_response_time(self):
