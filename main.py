@@ -1,4 +1,3 @@
-import re
 from tkinter import *
 from tkinter import filedialog
 from tkinter import messagebox
@@ -8,6 +7,9 @@ from time import *
 from collections import Counter
 
 
+# 打包exe文件
+# pyinstaller -F -w main.py
+
 # 主界面
 class MyGUI:
     def __init__(self):
@@ -15,6 +17,7 @@ class MyGUI:
         self.examiner_list = []  # 考核人员名单
         self.data = None  # master实例
         self.init_window = Tk()  # 父布局
+        self.final_wb = Workbook(encoding='ascii')  # 最终导出的文件实例
 
         # 标签
         self.log_label = Label(self.init_window, text="日志")
@@ -39,13 +42,6 @@ class MyGUI:
         self.init_window.geometry("500x250+100+100")  # 指定初始化大小以及出现位置
         # self.init_window.attributes("-alpha", 0.8)  # 指定透明度
 
-        # 设置组件位置范例
-        # self.init_data_text.grid(row=1, column=0, rowspan=5, columnspan=5)
-        # 设置滚动条范例
-        # self.result_data_scrollbar_y.config(command=self.result_data_text.yview)
-        # self.result_data_text.config(yscrollcommand=self.result_data_scrollbar_y.set)
-        # self.result_data_scrollbar_y.grid(row=1, column=23, rowspan=15, sticky="NS")
-
         self.log_label.place(relx=0.05, rely=0.05, relwidth=0.65, relheight=0.15)
         self.operate_label.place(relx=0.75, rely=0.05, relwidth=0.2, relheight=0.15)
         self.log_data_text.place(relx=0.05, rely=0.25, relwidth=0.65, relheight=0.7)
@@ -62,6 +58,7 @@ class MyGUI:
         file_name = filedialog.askopenfilename(title='打开文件',
                                                filetypes=[('表格文件', '*.xls; *.xlsx; *.et'), ('All Files', '*')])
         self.file_name = file_name
+        print(file_name)
         try:
             temp_data = open_workbook(file_name)
         except FileNotFoundError:
@@ -113,7 +110,7 @@ class MyGUI:
     # 开始选择员工列表
     def open_staff_list(self):
         name_list = self.data.get_name_list()
-        inputDialog = MyDialog(name_list)
+        inputDialog = ExaminerDialog(name_list)
         self.set_button_state(0)
         self.init_window.wait_window(inputDialog.rootWindow)  # 这一句很重要！！！
         self.set_button_state(1)
@@ -128,7 +125,19 @@ class MyGUI:
 
     # 处理数据
     def proceed_data(self):
+
         self.get_rate_all_solved()
+        initial_filename = "员工事件成功解决率"
+        # 开始导出
+        file_name = filedialog.asksaveasfilename(title="保存文件",
+                                                 filetype=[('表格文件', '*.xls')],
+                                                 defaultextension='.xls',
+                                                 initialfile=initial_filename)
+        if file_name:
+            self.final_wb.save(file_name)
+            self.write_log('文件保存至：' + file_name)
+        else:
+            self.write_log("文件名为空，导出中断。")
 
     # No.4:获取"事件成功解决率"的数据
     def get_rate_all_solved(self):
@@ -150,8 +159,7 @@ class MyGUI:
         for name in name_dict.keys():
             print(name + str(name_dict[name]))
 
-        wb = Workbook(encoding='ascii')
-        ws = wb.add_sheet("员工根据解决率")
+        ws = self.final_wb.add_sheet("员工根据解决率")
         ws.write(0, 0, "员工姓名")
         ws.write(0, 1, "事件完成数")
         ws.write(0, 2, "事件根本解决数")
@@ -167,15 +175,6 @@ class MyGUI:
                 y = y + 1
             x = x + 1
             y = 0
-        file_name = filedialog.asksaveasfilename(title="保存文件",
-                                                 filetype=[('表格文件', '*.xls')],
-                                                 defaultextension='.xls',
-                                                 initialfile="员工事件成功解决率")
-        if file_name:
-            wb.save(file_name)
-            self.write_log('文件保存至：' + file_name)
-        else:
-            self.write_log("文件名为空，导出中断。")
 
     # 添加日志
     def write_log(self, msg):  # 日志动态打印
@@ -206,8 +205,8 @@ class MyGUI:
             return 10 * int(rate / 0.1)
 
 
-# 弹窗(采用软耦合的方式接收数据）
-class MyDialog:
+# 选择考核人员弹窗
+class ExaminerDialog:
     def __init__(self, name_list):
         self.name_list = name_list  # 传过来的名单
         self.result_list = []  # 需要发出去的名单
@@ -313,6 +312,13 @@ class MyDialog:
             if match:
                 suggestions.append(item)
         return suggestions
+
+
+class ExportDialog:
+    def __init__(self):
+        self.rootWindow = Toplevel()
+        self.rootWindow.title('请选择导出格式及内容')
+        self.rootWindow.geometry("600x300+250+250")
 
 
 # 数据类
