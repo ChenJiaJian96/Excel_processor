@@ -1,6 +1,7 @@
 from tkinter import *
 from tkinter import filedialog
 from tkinter import messagebox
+from tkinter import ttk
 from xlrd import *
 from xlwt import *
 from time import *
@@ -110,18 +111,22 @@ class MyGUI:
     # 开始选择员工列表
     def open_staff_list(self):
         name_list = self.data.get_name_list()
-        inputDialog = ExaminerDialog(name_list)
+        input_dialog = ExaminerDialog(name_list)
         self.set_button_state(0)
-        self.init_window.wait_window(inputDialog.rootWindow)  # 这一句很重要！！！
+        self.init_window.wait_window(input_dialog.rootWindow)  # 这一句很重要！！！
         self.set_button_state(1)
-        return inputDialog.result_list
+        return input_dialog.result_list
 
     # 导出文件
     def export_file(self):
         if self.data is None:
             self.write_log("请先打开您需要处理的文件")
         else:
-            self.proceed_data()
+            export_dialog = ExportDialog()
+            self.init_window.wait_window(export_dialog.rootWindow)
+            result_list = export_dialog.result_list
+            print(result_list)
+            # self.proceed_data()
 
     # 处理数据
     def proceed_data(self):
@@ -252,7 +257,6 @@ class ExaminerDialog:
         except TypeError:
             messagebox.showwarning("表格内容错误", "表格员工列中出现非法内容，导致列表无法自动排序\n"
                                              "——非法字符包括数字、空格等，请自行删除。")
-
         for item in self.name_list:
             self.name_list_box.insert(END, item)
 
@@ -317,9 +321,54 @@ class ExaminerDialog:
 class ExportDialog:
     def __init__(self):
         self.rootWindow = Toplevel()
-        self.rootWindow.title('请选择导出格式及内容')
+        self.rootWindow.title('导出设置')
         self.rootWindow.geometry("600x300+250+250")
+        self.result_list = []
 
+        self.format_label = Label(self.rootWindow, text="导出格式")
+        self.text_label = Label(self.rootWindow, text="导出内容")
+        self.check_var1 = IntVar()
+        self.check_var2 = IntVar()
+        self.xls_cb = Checkbutton(self.rootWindow, text="导出文档", variable=self.check_var1, onvalue=1, offvalue=0, command=self.call_xls)
+        self.img_cb = Checkbutton(self.rootWindow, text="导出图片", variable=self.check_var2, onvalue=1, offvalue=0, command=self.call_img)
+        self.combo_var = StringVar()
+        self.text_cb = ttk.Combobox(self.rootWindow, textvariable=self.combo_var)
+        self.text_cb['values'] = ("全部导出", "仅导出指定员工的“根本解决”情况")
+        self.text_cb.current(0)
+        self.confirm_button = Button(self.rootWindow, text="确认", command=self.ok)
+        self.cancel_button = Button(self.rootWindow, text="取消", command=self.cancel)
+        self.init_ui()
+
+    def call_xls(self):
+        self.xls_cb.select()
+        self.img_cb.deselect()
+
+    def call_img(self):
+        self.img_cb.select()
+        self.xls_cb.deselect()
+
+    def init_ui(self):
+        self.format_label.place(relx=0.05, rely=0.05, relwidth=0.3, relheight=0.2)
+        self.xls_cb.place(relx=0.05, rely=0.3, relwidth=0.3, relheight=0.1)
+        self.img_cb.place(relx=0.5, rely=0.3, relwidth=0.3, relheight=0.1)
+        self.format_label.place(relx=0.05, rely=0.45, relwidth=0.3, relheight=0.2)
+        self.text_cb.place(relx=0.05, rely=0.7, relwidth=0.7, relheight=0.1)
+        self.cancel_button.place(relx=0.6, rely=0.85, relwidth=0.15, relheight=0.1)
+        self.confirm_button.place(relx=0.8, rely=0.85, relwidth=0.15, relheight=0.1)
+
+    def ok(self):
+        if self.check_var1 == 1 and self.check_var2 == 0:
+            self.result_list.append(1)
+        elif self.check_var1 == 0 and self.check_var2 == 1:
+            self.result_list.append(2)
+        else:
+            self.result_list.append(0)
+        self.result_list.append(self.combo_var)
+        self.rootWindow.destroy()
+
+    def cancel(self):
+        self.result_list = None  # 清空弹窗数据
+        self.rootWindow.destroy()
 
 # 数据类
 class ExcelMaster:
