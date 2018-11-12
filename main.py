@@ -122,27 +122,39 @@ class MyGUI:
         if self.data is None:
             self.write_log("请先打开您需要处理的文件")
         else:
-            export_dialog = ExportDialog()
-            self.init_window.wait_window(export_dialog.rootWindow)
-            result_list = export_dialog.result_list
-            print(result_list)
-            # self.proceed_data()
+            res = self.open_export_dialog()
+            print(res)
+            self.proceed_data(res)
+
+    def open_export_dialog(self):
+        export_dialog = ExportDialog()
+        self.set_button_state(0)
+        self.init_window.wait_window(export_dialog.rootWindow)
+        self.set_button_state(1)
+        return export_dialog.result_list
 
     # 处理数据
-    def proceed_data(self):
-
-        self.get_rate_all_solved()
-        initial_filename = "员工事件成功解决率"
-        # 开始导出
-        file_name = filedialog.asksaveasfilename(title="保存文件",
-                                                 filetype=[('表格文件', '*.xls')],
-                                                 defaultextension='.xls',
-                                                 initialfile=initial_filename)
-        if file_name:
-            self.final_wb.save(file_name)
-            self.write_log('文件保存至：' + file_name)
-        else:
-            self.write_log("文件名为空，导出中断。")
+    def proceed_data(self, res):
+        if res[0] == 0:
+            pass
+        # 用户选择导出文件
+        elif res[0] == 1:
+            if res[1] == 1:
+                self.get_rate_all_solved()
+                initial_filename = "员工事件成功解决率"
+                # 开始导出
+                file_name = filedialog.asksaveasfilename(title="保存文件",
+                                                         filetype=[('表格文件', '*.xls')],
+                                                         defaultextension='.xls',
+                                                         initialfile=initial_filename)
+                if file_name:
+                    self.final_wb.save(file_name)
+                    self.write_log('文件保存至：' + file_name)
+                else:
+                    self.write_log("文件名为空，导出中断。")
+        # 用户选择导出图片
+        elif res[0] == 2:
+            pass
 
     # No.4:获取"事件成功解决率"的数据
     def get_rate_all_solved(self):
