@@ -11,6 +11,11 @@ from collections import Counter
 # 打包exe文件
 # pyinstaller -F -w main.py
 
+global option1
+option1 = "全部导出"
+global option2
+option2 = "仅导出指定员工的“根本解决”情况"
+
 # 主界面
 class MyGUI:
     def __init__(self):
@@ -124,7 +129,10 @@ class MyGUI:
         else:
             res = self.open_export_dialog()
             print(res)
-            self.proceed_data(res)
+            if res is None:
+                self.write_log("你取消了导出操作")
+            else:
+                self.proceed_data(res)
 
     def open_export_dialog(self):
         export_dialog = ExportDialog()
@@ -139,7 +147,9 @@ class MyGUI:
             pass
         # 用户选择导出文件
         elif res[0] == 1:
-            if res[1] == 1:
+            if res[1] == option1:
+                pass
+            if res[1] == option2:
                 self.get_rate_all_solved()
                 initial_filename = "员工事件成功解决率"
                 # 开始导出
@@ -341,11 +351,15 @@ class ExportDialog:
         self.text_label = Label(self.rootWindow, text="导出内容")
         self.check_var1 = IntVar()
         self.check_var2 = IntVar()
-        self.xls_cb = Checkbutton(self.rootWindow, text="导出文档", variable=self.check_var1, onvalue=1, offvalue=0, command=self.call_xls)
-        self.img_cb = Checkbutton(self.rootWindow, text="导出图片", variable=self.check_var2, onvalue=1, offvalue=0, command=self.call_img)
+        self.xls_cb = Checkbutton(self.rootWindow, text="导出文档", variable=self.check_var1, onvalue=1, offvalue=0,
+                                  command=self.call_xls)
+        self.img_cb = Checkbutton(self.rootWindow, text="导出图片", variable=self.check_var2, onvalue=1, offvalue=0,
+                                  command=self.call_img)
+        self.xls_cb.select()
         self.combo_var = StringVar()
         self.text_cb = ttk.Combobox(self.rootWindow, textvariable=self.combo_var)
-        self.text_cb['values'] = ("全部导出", "仅导出指定员工的“根本解决”情况")
+        self.text_cb['values'] = (option1, option2)
+        self.text_cb['state'] = "readonly"
         self.text_cb.current(0)
         self.confirm_button = Button(self.rootWindow, text="确认", command=self.ok)
         self.cancel_button = Button(self.rootWindow, text="取消", command=self.cancel)
@@ -369,18 +383,20 @@ class ExportDialog:
         self.confirm_button.place(relx=0.8, rely=0.85, relwidth=0.15, relheight=0.1)
 
     def ok(self):
-        if self.check_var1 == 1 and self.check_var2 == 0:
+        print(self.check_var1.get())
+        if self.check_var1.get() == 1 and self.check_var2.get() == 0:
             self.result_list.append(1)
-        elif self.check_var1 == 0 and self.check_var2 == 1:
+        elif self.check_var2.get() == 1 and self.check_var1.get() == 0:
             self.result_list.append(2)
         else:
             self.result_list.append(0)
-        self.result_list.append(self.combo_var)
+        self.result_list.append(self.combo_var.get())
         self.rootWindow.destroy()
 
     def cancel(self):
         self.result_list = None  # 清空弹窗数据
         self.rootWindow.destroy()
+
 
 # 数据类
 class ExcelMaster:
