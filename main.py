@@ -209,9 +209,10 @@ class MyGUI:
         log_msg = str(current_time) + " " + str(msg) + "\n"  # 换行
         self.log_data_text.insert(END, log_msg)
 
-    @staticmethod
-    def exit_sys():
+    def exit_sys(self):
+        self.init_window.destroy()
         quit()
+
 
     @staticmethod
     def get_current_time():
@@ -344,7 +345,7 @@ class ExportDialog:
     def __init__(self):
         self.rootWindow = Toplevel()
         self.rootWindow.title('导出设置')
-        self.rootWindow.geometry("600x300+250+250")
+        self.rootWindow.geometry("300x180+250+250")
         self.result_list = []
 
         self.format_label = Label(self.rootWindow, text="导出格式")
@@ -374,13 +375,13 @@ class ExportDialog:
         self.xls_cb.deselect()
 
     def init_ui(self):
-        self.format_label.place(relx=0.05, rely=0.05, relwidth=0.3, relheight=0.2)
-        self.xls_cb.place(relx=0.05, rely=0.3, relwidth=0.3, relheight=0.1)
-        self.img_cb.place(relx=0.5, rely=0.3, relwidth=0.3, relheight=0.1)
-        self.format_label.place(relx=0.05, rely=0.45, relwidth=0.3, relheight=0.2)
-        self.text_cb.place(relx=0.05, rely=0.7, relwidth=0.7, relheight=0.1)
-        self.cancel_button.place(relx=0.6, rely=0.85, relwidth=0.15, relheight=0.1)
-        self.confirm_button.place(relx=0.8, rely=0.85, relwidth=0.15, relheight=0.1)
+        self.format_label.place(relx=0.05, rely=0.05, relwidth=0.3, relheight=0.15)
+        self.xls_cb.place(relx=0.05, rely=0.25, relwidth=0.3, relheight=0.1)
+        self.img_cb.place(relx=0.6, rely=0.25, relwidth=0.3, relheight=0.1)
+        self.text_label.place(relx=0.05, rely=0.4, relwidth=0.3, relheight=0.15)
+        self.text_cb.place(relx=0.1, rely=0.60, relwidth=0.8, relheight=0.15)
+        self.confirm_button.place(relx=0.6, rely=0.82, relwidth=0.15, relheight=0.15)
+        self.cancel_button.place(relx=0.8, rely=0.82, relwidth=0.15, relheight=0.15)
 
     def ok(self):
         print(self.check_var1.get())
