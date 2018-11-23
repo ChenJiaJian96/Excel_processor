@@ -6,6 +6,7 @@ from xlrd import *
 from xlwt import *
 from time import *
 from collections import Counter
+from PIL import ImageTk, Image
 
 # TODO：导出文件加上工号
 # 打包exe文件
@@ -15,6 +16,7 @@ global option1
 option1 = "全部导出"
 global option2
 option2 = "仅导出指定员工的“根本解决”情况"
+
 
 # 主界面
 class MyGUI:
@@ -34,10 +36,15 @@ class MyGUI:
         # 按钮
         self.open_file_button = Button(self.init_window, text="打开文件", command=self.open_file)
         self.export_file_button = Button(self.init_window, text="导出文件", command=self.export_file)
+        self.change_examiners_button = Button(self.init_window, text="修改考核名单", command=self.open_file_button)
         self.exit_button = Button(self.init_window, text="退出系统", command=self.exit_sys)
         # 滚动条
         self.log_scrollbar_y = Scrollbar(self.init_window)
-
+        # 图标
+        self.more_label = Label(self.init_window, text="...", font="bold")
+        self.question_label = Label(self.init_window, text=" ? ")
+        self.exclamation_label = Label(self.init_window, text=" ! ")
+        self.bottom_label = Label(self.init_window, text="@CopyRight", font="Arial, 8")
         # 设置窗口属性
         self.set_init_window()
         self.init_window.mainloop()
@@ -45,19 +52,28 @@ class MyGUI:
     # 定义组件放置位置
     def set_init_window(self):
         self.init_window.title("Excel自动化处理工具")  # 指定标题
-        self.init_window.geometry("500x250+100+100")  # 指定初始化大小以及出现位置
+        self.init_window.geometry("500x265+100+100")  # 指定初始化大小以及出现位置
         # self.init_window.attributes("-alpha", 0.8)  # 指定透明度
 
-        self.log_label.place(relx=0.05, rely=0.05, relwidth=0.65, relheight=0.15)
-        self.operate_label.place(relx=0.75, rely=0.05, relwidth=0.2, relheight=0.15)
-        self.log_data_text.place(relx=0.05, rely=0.25, relwidth=0.65, relheight=0.7)
-        self.open_file_button.place(relx=0.75, rely=0.25, relwidth=0.2, relheight=0.2)
-        self.export_file_button.place(relx=0.75, rely=0.5, relwidth=0.2, relheight=0.2)
-        self.exit_button.place(relx=0.75, rely=0.75, relwidth=0.2, relheight=0.2)
+        self.log_label.place(relx=0.05, rely=0.05, relwidth=0.6, relheight=0.1)
+        self.operate_label.place(relx=0.7, rely=0.05, relwidth=0.2, relheight=0.1)
+        self.log_data_text.place(relx=0.05, rely=0.20, relwidth=0.6, relheight=0.75)
+
+        self.open_file_button.place(relx=0.72, rely=0.18, relwidth=0.18, relheight=0.17)
+        self.export_file_button.place(relx=0.72, rely=0.38, relwidth=0.18, relheight=0.17)
+        self.change_examiners_button.place(relx=0.72, rely=0.58, relwidth=0.18, relheight=0.17)
+        self.exit_button.place(relx=0.72, rely=0.78, relwidth=0.18, relheight=0.17)
 
         self.log_scrollbar_y.config(command=self.log_data_text.yview)
         self.log_data_text.config(yscrollcommand=self.log_scrollbar_y.set)
-        self.log_scrollbar_y.place(relx=0.7, rely=0.25, relheight=0.7)
+        self.log_scrollbar_y.place(relx=0.65, rely=0.2, relheight=0.75)
+
+        # 生成右侧提示按钮
+        self.more_label.place(relx=0.93, rely=0.7, relwidth=0.05, relheight=0.08)
+        self.question_label.place(relx=0.93, rely=0.8, relwidth=0.05, relheight=0.08)
+        self.exclamation_label.place(relx=0.93, rely=0.9, relwidth=0.05, relheight=0.08)
+
+        self.bottom_label.place(relx=0.4, rely=0.95, relwidth=0.2, relheight=0.05)
 
     # 打开文件
     def open_file(self):
@@ -212,7 +228,6 @@ class MyGUI:
     def exit_sys(self):
         self.init_window.destroy()
         quit()
-
 
     @staticmethod
     def get_current_time():
