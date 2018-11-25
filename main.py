@@ -6,16 +6,19 @@ from xlrd import *
 from xlwt import *
 from time import *
 from collections import Counter
-from PIL import ImageTk, Image
 
 # TODO：导出文件加上工号
 # 打包exe文件
 # pyinstaller -F -w main.py
 
-global option1
+global option1, option2, option3, option4, option5, option6, option7
 option1 = "全部导出"
-global option2
-option2 = "仅导出指定员工的“根本解决”情况"
+option2 = "仅导出指定员工的“平均响应时长”情况"
+option3 = "仅导出指定员工的“响应超时率”情况"
+option4 = "仅导出指定员工的“按时解决率”情况"
+option5 = "仅导出指定员工的“根本解决”情况"
+option6 = "仅导出指定员工的“平均满意度”情况"
+option7 = "仅导出指定员工的“平均解决时长”情况"
 
 
 # 主界面
@@ -36,14 +39,14 @@ class MyGUI:
         # 按钮
         self.open_file_button = Button(self.init_window, text="打开文件", command=self.open_file)
         self.export_file_button = Button(self.init_window, text="导出文件", command=self.export_file)
-        self.change_examiners_button = Button(self.init_window, text="修改考核名单", command=self.open_file_button)
+        self.change_examiners_button = Button(self.init_window, text="修改考核名单", command=self.setup_staff_list)
         self.exit_button = Button(self.init_window, text="退出系统", command=self.exit_sys)
         # 滚动条
         self.log_scrollbar_y = Scrollbar(self.init_window)
         # 图标
-        self.more_label = Label(self.init_window, text="...", font="bold")
-        self.question_label = Label(self.init_window, text=" ? ")
-        self.exclamation_label = Label(self.init_window, text=" ! ")
+        self.more_label = Label(self.init_window, text="...", font="bold, 8")
+        self.question_label = Label(self.init_window, text=" ? ", font="bold, 8")
+        self.exclamation_label = Button(self.init_window, text=" ! ", font="bold, 8")
         self.bottom_label = Label(self.init_window, text="@CopyRight", font="Arial, 8")
         # 设置窗口属性
         self.set_init_window()
@@ -69,9 +72,9 @@ class MyGUI:
         self.log_scrollbar_y.place(relx=0.65, rely=0.2, relheight=0.75)
 
         # 生成右侧提示按钮
-        self.more_label.place(relx=0.93, rely=0.7, relwidth=0.05, relheight=0.08)
-        self.question_label.place(relx=0.93, rely=0.8, relwidth=0.05, relheight=0.08)
-        self.exclamation_label.place(relx=0.93, rely=0.9, relwidth=0.05, relheight=0.08)
+        self.more_label.place(relx=0.93, rely=0.7, relwidth=0.03, relheight=0.08)
+        self.question_label.place(relx=0.93, rely=0.8, relwidth=0.03, relheight=0.08)
+        self.exclamation_label.place(relx=0.93, rely=0.9, relwidth=0.03, relheight=0.08)
 
         self.bottom_label.place(relx=0.4, rely=0.95, relwidth=0.2, relheight=0.05)
 
@@ -121,6 +124,7 @@ class MyGUI:
 
     # 设置员工列表
     def setup_staff_list(self):
+
         res = self.open_staff_list()
         print(res)
         if res is None:
@@ -356,6 +360,7 @@ class ExaminerDialog:
         return suggestions
 
 
+# 选择导出文件弹窗
 class ExportDialog:
     def __init__(self):
         self.rootWindow = Toplevel()
@@ -374,7 +379,7 @@ class ExportDialog:
         self.xls_cb.select()
         self.combo_var = StringVar()
         self.text_cb = ttk.Combobox(self.rootWindow, textvariable=self.combo_var)
-        self.text_cb['values'] = (option1, option2)
+        self.text_cb['values'] = (option1, option2, option3, option4, option5, option6, option7)
         self.text_cb['state'] = "readonly"
         self.text_cb.current(0)
         self.confirm_button = Button(self.rootWindow, text="确认", command=self.ok)
