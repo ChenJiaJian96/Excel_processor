@@ -6,6 +6,8 @@ from xlrd import *
 from xlwt import *
 from time import *
 from collections import Counter
+import matplotlib.pyplot as plt
+import matplotlib
 
 # TODO：导出文件加上工号
 # 打包exe文件
@@ -20,6 +22,8 @@ option5 = "仅导出指定员工的“根本解决”情况"
 option6 = "仅导出指定员工的“平均满意度”情况"
 option7 = "仅导出指定员工的“平均解决时长”情况"
 
+matplotlib.rcParams['font.sans-serif'] = ['SimHei']
+
 
 # 主界面
 class MyGUI:
@@ -28,7 +32,8 @@ class MyGUI:
         self.examiner_list = []  # 考核人员名单
         self.data = None  # master实例
         self.init_window = Tk()  # 父布局
-        self.final_wb = Workbook(encoding='ascii')  # 最终导出的文件实例
+        self.final_wb = None  # 最终导出的文件实例
+        self.final_png = None  # 最终导出的图片实例
 
         # 标签
         self.log_label = Label(self.init_window, text="日志")
@@ -118,9 +123,11 @@ class MyGUI:
         if i == 0:
             self.open_file_button.config(state=DISABLED)
             self.export_file_button.config(state=DISABLED)
+            self.change_examiners_button.config(state=DISABLED)
         elif i == 1:
             self.open_file_button.config(state=ACTIVE)
             self.export_file_button.config(state=ACTIVE)
+            self.change_examiners_button.config(state=ACTIVE)
 
     # 设置员工列表
     def setup_staff_list(self):
@@ -163,31 +170,42 @@ class MyGUI:
 
     # 处理数据
     def proceed_data(self, res):
-        if res[0] == 0:
-            pass
+        # 首先清空缓存，避免重复导出之前的数据
+        self.final_wb = Workbook(encoding='ascii')
+        self.final_png = None
+        if len(res) == 0:
+            self.write_log("你取消了导出")
         # 用户选择导出文件
         elif res[0] == 1:
             if res[1] == option1:
                 pass
-            if res[1] == option2:
-                self.get_rate_all_solved()
+            if res[1] == option5:
+                name_dict = self.get_rate_all_solved_data()
+                self.get_rate_all_solved_xls(name_dict)
                 initial_filename = "员工事件成功解决率"
                 # 开始导出
                 file_name = filedialog.asksaveasfilename(title="保存文件",
                                                          filetype=[('表格文件', '*.xls')],
                                                          defaultextension='.xls',
                                                          initialfile=initial_filename)
-                if file_name:
+                try:
                     self.final_wb.save(file_name)
-                    self.write_log('文件保存至：' + file_name)
+                except PermissionError:
+                    self.write_log("权限出错，导出中断。")
+                except FileNotFoundError:
+                    self.write_log("你点击了取消，导出中断。")
                 else:
-                    self.write_log("文件名为空，导出中断。")
+                    self.write_log('导出成功。文件保存至：' + file_name)
         # 用户选择导出图片
         elif res[0] == 2:
-            pass
+            if res[1] == option5:
+                name_dict = self.get_rate_all_solved_data()
+                self.get_rate_all_solved_png(name_dict)
+            else:
+                pass
 
     # No.4:获取"事件成功解决率"的数据
-    def get_rate_all_solved(self):
+    def get_rate_all_solved_data(self):
         temp_dict = self.data.get_name_dict()
         name_dict = {}
         # 仅保存需要考核的员工
@@ -199,29 +217,85 @@ class MyGUI:
         for name in name_dict.keys():
             total_num = name_dict[name]  # 事件总数
             cur_num = self.data.get_num_all_solved(name)  # 根本解决事件数
-            rate = float(cur_num / total_num)
+            rate = round(cur_num / total_num, 3)
             score = self.cal_score_all_solved(rate)
-            name_dict[name] = [total_num, cur_num, rate, score]
+            name_dict[name] = [total_num, cur_num, rate * 100, score]
         # 输出结果
         for name in name_dict.keys():
             print(name + str(name_dict[name]))
+        return name_dict
 
+    # No.4:获取"事件成功解决率"文档
+    def get_rate_all_solved_xls(self, name_dict):
         ws = self.final_wb.add_sheet("员工根据解决率")
-        ws.write(0, 0, "员工姓名")
-        ws.write(0, 1, "事件完成数")
-        ws.write(0, 2, "事件根本解决数")
-        ws.write(0, 3, "事件根本解决率")
-        ws.write(0, 4, "该项得分")
+        # 设置加粗字体
+        style = XFStyle()
+        font = Font()
+        font.bold = True
+        style.font = font
+        ws.write(0, 0, "员工姓名", style=style)
+        ws.write(0, 1, "事件完成数", style=style)
+        ws.write(0, 2, "事件根本解决数", style=style)
+        ws.write(0, 3, "事件根本解决率(%)", style=style)
+        ws.write(0, 4, "该项得分", style=style)
         x = 1
         y = 0
         for name in name_dict.keys():
-            ws.write(x, y, name)
+            ws.write(x, y, name, style=style)
             y = y + 1
             for item in name_dict[name]:
                 ws.write(x, y, item)
                 y = y + 1
             x = x + 1
             y = 0
+
+    # No.4:获取"事件成功解决率"导出图片
+    def get_rate_all_solved_png(self, name_dict):
+        label_list, num_list1, num_list2, num_list3, num_list4 = [], [], [], [], []
+        for name in name_dict:
+            label_list.append(name)
+            num_list1.append(name_dict[name][0])
+            num_list2.append(name_dict[name][1])
+            num_list3.append(name_dict[name][2])
+            num_list4.append(name_dict[name][3])
+        x = range(len(num_list1))
+        rects1 = plt.bar(x=x, height=num_list1, width=0.2, alpha=0.8, color='red', label="事件完成数")
+        rects2 = plt.bar(x=[i + 0.2 for i in x], height=num_list2, width=0.2, color='green', label="事件根本解决数")
+        rects3 = plt.bar(x=[i + 0.4 for i in x], height=num_list3, width=0.2, color='blue', label="事件根本解决率(%)")
+        rects4 = plt.bar(x=[i + 0.6 for i in x], height=num_list4, width=0.2, color='yellow', label="该项得分")
+        plt.ylim(0, 105)  # y轴取值范围 plt.ylabel("数量")
+        # 设置x轴刻度显示值
+        # 参数一：中点坐标
+        # 参数二：显示值
+        plt.xticks([index + 0.1 for index in x], label_list)
+        plt.xlabel("员工姓名")
+        plt.title("员工根本解决率统计图表")
+        plt.legend()  # 设置题注
+        #  编辑文本
+        for rect in rects1:
+            height = rect.get_height()
+            plt.text(rect.get_x() + rect.get_width() / 2, height + 1, str(height), ha="center", va="bottom")
+        for rect in rects2:
+            height = rect.get_height()
+            plt.text(rect.get_x() + rect.get_width() / 2, height + 1, str(height), ha="center", va="bottom")
+        for rect in rects3:
+            height = rect.get_height()
+            plt.text(rect.get_x() + rect.get_width() / 2, height + 1, str(height), ha="center", va="bottom")
+        for rect in rects4:
+            height = rect.get_height()
+            plt.text(rect.get_x() + rect.get_width() / 2, height + 1, str(height), ha="center", va="bottom")
+        initial_filename = "员工根本解决率统计图表"
+        filename = filedialog.asksaveasfilename(title="保存文件",
+                                                filetype=[('图片文件', '*.jpg')],
+                                                defaultextension='.jpg',
+                                                initialfile=initial_filename)
+        try:
+            plt.savefig(filename)
+        except Exception:
+            pass
+        else:
+            self.write_log("导出图标成功")
+        plt.show()
 
     # 添加日志
     def write_log(self, msg):  # 日志动态打印
@@ -374,7 +448,7 @@ class ExportDialog:
         self.check_var2 = IntVar()
         self.xls_cb = Checkbutton(self.rootWindow, text="导出文档", variable=self.check_var1, onvalue=1, offvalue=0,
                                   command=self.call_xls)
-        self.img_cb = Checkbutton(self.rootWindow, text="导出图片", variable=self.check_var2, onvalue=1, offvalue=0,
+        self.img_cb = Checkbutton(self.rootWindow, text="仅导出图片", variable=self.check_var2, onvalue=1, offvalue=0,
                                   command=self.call_img)
         self.xls_cb.select()
         self.combo_var = StringVar()
