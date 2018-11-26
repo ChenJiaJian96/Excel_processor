@@ -8,6 +8,7 @@ from time import strftime, localtime, mktime, strptime, time
 from collections import Counter
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
+import locale
 
 # TODO：导出文件加上工号
 # 打包exe文件
@@ -105,8 +106,8 @@ class MyGUI:
     def check_file_integrity(self):
         self.write_log("开始检查文件完整性")
         flag = 0
-        if self.data.col_index('联系人') == -1:
-            self.write_log("打开的文件中找不到列：“联系人”，无法导出员工名单")
+        if self.data.col_index('处理人') == -1:
+            self.write_log("打开的文件中找不到列：“处理人”，无法导出员工名单")
             flag = 1
         if self.data.col_index('结束代码') == -1:
             self.write_log("打开的文件中找不到列：“结束代码”, 无法计算员工根本解决率")
@@ -360,6 +361,9 @@ class ExaminerDialog:
         self.all_del_button = Button(self.rootWindow, text="全部删除", command=self.del_all)
         self.confirm_button = Button(self.rootWindow, text="确认", command=self.ok)
 
+        # 滚动条
+        self.box_scrollbar_y = Scrollbar(self.rootWindow)
+
         self.name_list_box = Listbox(self.rootWindow, selectmode=MULTIPLE)  # 表格员工名单
         self.selected_list_box = Listbox(self.rootWindow, selectmode=BROWSE)  # 选中员工名单
         # 弹窗界面
@@ -376,6 +380,9 @@ class ExaminerDialog:
         self.del_button.place(relx=0.4, rely=0.47, relwidth=0.2, relheight=0.12)
         self.all_del_button.place(relx=0.4, rely=0.64, relwidth=0.2, relheight=0.12)
         self.confirm_button.place(relx=0.4, rely=0.81, relwidth=0.2, relheight=0.12)
+        self.box_scrollbar_y.config(command=self.name_list_box.yview)
+        self.name_list_box.config(yscrollcommand=self.box_scrollbar_y.set)
+        self.box_scrollbar_y.place(relx=0.35, rely=0.3, relheight=0.65)
         # TODO: 对名单进行初步处理，去除能删掉的脏数据
 
         # 对名单进行排序，优化用户体验
@@ -532,20 +539,20 @@ class ExcelMaster:
 
     # 返回表格的员工列表
     def get_name_list(self):
-        i = self.col_index('联系人')
+        i = self.col_index('处理人')
         name_dict = Counter(self.table.col_values(i, start_rowx=1, end_rowx=None))
         return list(name_dict.keys())
 
     # 返回表格的员工完成事件数
     def get_name_dict(self):
-        i = self.col_index('联系人')
+        i = self.col_index('处理人')
         name_dict = Counter(self.table.col_values(i, start_rowx=1, end_rowx=None))
         return name_dict
 
     # 返回员工“根本解决”的事件总数
     def get_num_all_solved(self, name):
         print("正在查询: " + name)
-        m = self.col_index('联系人')
+        m = self.col_index('处理人')
         n = self.col_index('结束代码')
         name_list = list(self.table.col_values(m, start_rowx=1, end_rowx=None))
         code_list = list(self.table.col_values(n, start_rowx=1, end_rowx=None))
