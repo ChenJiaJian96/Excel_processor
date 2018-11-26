@@ -2,12 +2,12 @@ from tkinter import *
 from tkinter import filedialog
 from tkinter import messagebox
 from tkinter import ttk
-from xlrd import *
-from xlwt import *
-from time import *
+from xlrd import open_workbook, XLRDError
+from xlwt import Workbook, Font, XFStyle
+from time import strftime, localtime, mktime, strptime, time
 from collections import Counter
 import matplotlib.pyplot as plt
-import matplotlib
+from matplotlib import rcParams
 
 # TODO：导出文件加上工号
 # 打包exe文件
@@ -22,7 +22,7 @@ option5 = "仅导出指定员工的“根本解决”情况"
 option6 = "仅导出指定员工的“平均满意度”情况"
 option7 = "仅导出指定员工的“平均解决时长”情况"
 
-matplotlib.rcParams['font.sans-serif'] = ['SimHei']
+rcParams['font.sans-serif'] = ['SimHei']
 
 
 # 主界面
@@ -50,7 +50,7 @@ class MyGUI:
         # 图标
         self.more_label = Label(self.init_window, text="...", font="bold, 8")
         self.question_label = Label(self.init_window, text=" ? ", font="bold, 8")
-        self.exclamation_label = Button(self.init_window, text=" ! ", font="bold, 8")
+        self.exclamation_label = Label(self.init_window, text=" ! ", font="bold, 8")
         self.bottom_label = Label(self.init_window, text="@CopyRight", font="Arial, 8")
         # 设置窗口属性
         self.set_init_window()
@@ -64,7 +64,7 @@ class MyGUI:
 
         self.log_label.place(relx=0.05, rely=0.05, relwidth=0.6, relheight=0.1)
         self.operate_label.place(relx=0.7, rely=0.05, relwidth=0.2, relheight=0.1)
-        self.log_data_text.place(relx=0.05, rely=0.20, relwidth=0.6, relheight=0.75)
+        self.log_data_text.place(relx=0.05, rely=0.2, relwidth=0.62, relheight=0.73)
 
         self.open_file_button.place(relx=0.72, rely=0.18, relwidth=0.18, relheight=0.17)
         self.export_file_button.place(relx=0.72, rely=0.38, relwidth=0.18, relheight=0.17)
@@ -73,7 +73,7 @@ class MyGUI:
 
         self.log_scrollbar_y.config(command=self.log_data_text.yview)
         self.log_data_text.config(yscrollcommand=self.log_scrollbar_y.set)
-        self.log_scrollbar_y.place(relx=0.65, rely=0.2, relheight=0.75)
+        self.log_scrollbar_y.place(relx=0.67, rely=0.2, relheight=0.73)
 
         # 生成右侧提示按钮
         self.more_label.place(relx=0.93, rely=0.7, relwidth=0.03, relheight=0.08)
