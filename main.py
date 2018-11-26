@@ -33,7 +33,6 @@ class MyGUI:
         self.data = None  # master实例
         self.init_window = Tk()  # 父布局
         self.final_wb = None  # 最终导出的文件实例
-        self.final_png = None  # 最终导出的图片实例
 
         # 标签
         self.log_label = Label(self.init_window, text="日志")
@@ -172,30 +171,32 @@ class MyGUI:
     def proceed_data(self, res):
         # 首先清空缓存，避免重复导出之前的数据
         self.final_wb = Workbook(encoding='ascii')
-        self.final_png = None
         if len(res) == 0:
             self.write_log("你取消了导出")
         # 用户选择导出文件
         elif res[0] == 1:
+            initial_filename = ""
             if res[1] == option1:
+                initial_filename = "员工情况汇总表"
                 pass
             if res[1] == option5:
                 name_dict = self.get_rate_all_solved_data()
                 self.get_rate_all_solved_xls(name_dict)
                 initial_filename = "员工事件成功解决率"
-                # 开始导出
-                file_name = filedialog.asksaveasfilename(title="保存文件",
-                                                         filetype=[('表格文件', '*.xls')],
-                                                         defaultextension='.xls',
-                                                         initialfile=initial_filename)
-                try:
-                    self.final_wb.save(file_name)
-                except PermissionError:
-                    self.write_log("权限出错，导出中断。")
-                except FileNotFoundError:
-                    self.write_log("你点击了取消，导出中断。")
-                else:
-                    self.write_log('导出成功。文件保存至：' + file_name)
+
+            # 开始导出
+            file_name = filedialog.asksaveasfilename(title="保存文件",
+                                                     filetype=[('表格文件', '*.xls')],
+                                                     defaultextension='.xls',
+                                                     initialfile=initial_filename)
+            try:
+                self.final_wb.save(file_name)
+            except PermissionError:
+                self.write_log("权限出错，导出中断。")
+            except FileNotFoundError:
+                self.write_log("你点击了取消，导出中断。")
+            else:
+                self.write_log('导出成功。文件保存至：' + file_name)
         # 用户选择导出图片
         elif res[0] == 2:
             if res[1] == option5:
@@ -259,18 +260,19 @@ class MyGUI:
             num_list3.append(name_dict[name][2])
             num_list4.append(name_dict[name][3])
         x = range(len(num_list1))
-        rects1 = plt.bar(x=x, height=num_list1, width=0.2, alpha=0.8, color='red', label="事件完成数")
-        rects2 = plt.bar(x=[i + 0.2 for i in x], height=num_list2, width=0.2, color='green', label="事件根本解决数")
-        rects3 = plt.bar(x=[i + 0.4 for i in x], height=num_list3, width=0.2, color='blue', label="事件根本解决率(%)")
-        rects4 = plt.bar(x=[i + 0.6 for i in x], height=num_list4, width=0.2, color='yellow', label="该项得分")
-        plt.ylim(0, 105)  # y轴取值范围 plt.ylabel("数量")
-        # 设置x轴刻度显示值
-        # 参数一：中点坐标
-        # 参数二：显示值
-        plt.xticks([index + 0.1 for index in x], label_list)
+        rects1 = plt.bar(x=[i + 0.2 for i in x], height=num_list1, width=0.2, alpha=0.8, color='red', label="事件完成数")
+        rects2 = plt.bar(x=[i + 0.4 for i in x], height=num_list2, width=0.2, color='green', label="事件根本解决数")
+        rects3 = plt.bar(x=[i + 0.6 for i in x], height=num_list3, width=0.2, color='blue', label="事件根本解决率(%)")
+        rects4 = plt.bar(x=[i + 0.8 for i in x], height=num_list4, width=0.2, color='yellow', label="该项得分")
+        # 取值范围
+        plt.ylim(0, max(max(num_list1), 105))
+        plt.xlim(0, len(label_list))
+        # 中点坐标，显示值
+        plt.xticks([index + 0.5 for index in x], label_list)
         plt.xlabel("员工姓名")
+        plt.ylabel("数量（得分）")
         plt.title("员工根本解决率统计图表")
-        plt.legend()  # 设置题注
+        plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))  # 设置题注
         #  编辑文本
         for rect in rects1:
             height = rect.get_height()
@@ -284,6 +286,7 @@ class MyGUI:
         for rect in rects4:
             height = rect.get_height()
             plt.text(rect.get_x() + rect.get_width() / 2, height + 1, str(height), ha="center", va="bottom")
+
         initial_filename = "员工根本解决率统计图表"
         filename = filedialog.asksaveasfilename(title="保存文件",
                                                 filetype=[('图片文件', '*.jpg')],
@@ -291,10 +294,12 @@ class MyGUI:
                                                 initialfile=initial_filename)
         try:
             plt.savefig(filename)
-        except Exception:
-            pass
+        except PermissionError:
+            self.write_log("权限出错，导出中断。")
+        except FileNotFoundError:
+            self.write_log("你点击了取消，导出中断。")
         else:
-            self.write_log("导出图标成功")
+            self.write_log("导出图表成功，文件保存至：" + filename)
         plt.show()
 
     # 添加日志
@@ -302,6 +307,10 @@ class MyGUI:
         current_time = self.get_current_time()
         log_msg = str(current_time) + " " + str(msg) + "\n"  # 换行
         self.log_data_text.insert(END, log_msg)
+        divider_msg = "---------------------------------------" + "\n"
+        self.log_data_text.insert(END, divider_msg)
+        # 滚动至底部
+        self.log_data_text.yview_moveto(100)
 
     def exit_sys(self):
         self.init_window.destroy()
