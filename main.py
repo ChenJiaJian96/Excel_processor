@@ -8,7 +8,6 @@ from time import strftime, localtime, mktime, strptime, time
 from collections import Counter
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
-import locale
 
 # TODO：导出文件加上工号
 # 打包exe文件
@@ -19,7 +18,7 @@ option1 = "全部导出"
 option2 = "仅导出指定员工的“平均响应时长”情况"
 option3 = "仅导出指定员工的“响应超时率”情况"
 option4 = "仅导出指定员工的“按时解决率”情况"
-option5 = "仅导出指定员工的“根本解决”情况"
+option5 = "仅导出指定员工的“成功解决”情况"
 option6 = "仅导出指定员工的“平均满意度”情况"
 option7 = "仅导出指定员工的“平均解决时长”情况"
 
@@ -110,7 +109,7 @@ class MyGUI:
             self.write_log("打开的文件中找不到列：“处理人”，无法导出员工名单")
             flag = 1
         if self.data.col_index('结束代码') == -1:
-            self.write_log("打开的文件中找不到列：“结束代码”, 无法计算员工根本解决率")
+            self.write_log("打开的文件中找不到列：“结束代码”, 无法计算员工成功解决率")
             flag = 1
 
         if flag == 0:
@@ -219,7 +218,7 @@ class MyGUI:
                 pass
         for name in name_dict.keys():
             total_num = name_dict[name]  # 事件总数
-            cur_num = self.data.get_num_all_solved(name)  # 根本解决事件数
+            cur_num = self.data.get_num_all_solved(name)  # 成功解决事件数
             rate = round(cur_num / total_num, 4)
             score = self.cal_score_all_solved(rate)
             name_dict[name] = [total_num, cur_num, rate * 100, score]
@@ -238,8 +237,8 @@ class MyGUI:
         style.font = font
         ws.write(0, 0, "员工姓名", style=style)
         ws.write(0, 1, "事件完成数", style=style)
-        ws.write(0, 2, "事件根本解决数", style=style)
-        ws.write(0, 3, "事件根本解决率(%)", style=style)
+        ws.write(0, 2, "事件成功解决数", style=style)
+        ws.write(0, 3, "事件成功解决率(%)", style=style)
         ws.write(0, 4, "该项得分", style=style)
         x = 1
         y = 0
@@ -265,21 +264,17 @@ class MyGUI:
         # 设置画布大小
         plt.figure(figsize=(len(label_list) + 7, 5))
         rects1 = plt.bar(x=[i + 0.2 for i in x], height=num_list1, width=0.2, alpha=0.8, color='red', label="事件完成数")
-        rects2 = plt.bar(x=[i + 0.4 for i in x], height=num_list2, width=0.2, color='green', label="事件根本解决数")
-        rects3 = plt.bar(x=[i + 0.6 for i in x], height=num_list3, width=0.2, color='blue', label="事件根本解决率(%)")
+        rects2 = plt.bar(x=[i + 0.4 for i in x], height=num_list2, width=0.2, color='green', label="事件成功解决数")
+        rects3 = plt.bar(x=[i + 0.6 for i in x], height=num_list3, width=0.2, color='blue', label="事件成功解决率(%)")
         rects4 = plt.bar(x=[i + 0.8 for i in x], height=num_list4, width=0.2, color='yellow', label="该项得分")
         # 取值范围
         plt.ylim(0, max(max(num_list1), 105))
         plt.xlim(0, len(label_list))
         # 中点坐标，显示值
-        label_font = {'family': 'Arial',
-                      'weight': 'normal',
-                      'size': 10,
-                      }
         plt.xticks([index + 0.5 for index in x], label_list)
         plt.xlabel("员工姓名")
         plt.ylabel("数量（得分）")
-        plt.title("员工根本解决率统计图表")
+        plt.title("员工成功解决率统计图表")
         plt.legend(bbox_to_anchor=(1.01, 1), loc=2, borderaxespad=0., handleheight=1.675)
         #  编辑文本
         for rect in rects1:
@@ -295,7 +290,7 @@ class MyGUI:
             height = rect.get_height()
             plt.text(rect.get_x() + rect.get_width() / 2, height + 1, str(height), ha="center", va="bottom")
         plt.tight_layout()
-        initial_filename = "员工根本解决率统计图表"
+        initial_filename = "员工成功解决率统计图表"
         filename = filedialog.asksaveasfilename(title="保存文件",
                                                 filetype=[('图片文件', '*.png')],
                                                 defaultextension='.png',
@@ -329,8 +324,51 @@ class MyGUI:
         current_time = strftime('%Y-%m-%d %H:%M:%S', localtime(time()))
         return current_time
 
-    # 计算根本解决率的得分
-    def cal_score_all_solved(self, rate):
+    # 计算事件平均响应时长的得分
+    @staticmethod
+    def cal_score_ave_response(hour):
+        if hour <= 0.2:
+            return 100
+        elif hour <= 0.5:
+            return 90
+        elif hour <= 1:
+            return 80
+        elif hour <= 3:
+            return 70
+        else:
+            return 60
+
+    # 计算事件响应超时率的得分
+    @staticmethod
+    def cal_score_overtime(rate):
+        if rate <= 0.001:
+            return 100
+        elif rate <= 0.01:
+            return 90
+        elif rate <= 0.1:
+            return 80
+        elif rate <= 0.2:
+            return 70
+        else:
+            return 60
+
+    # 计算事件按时解决率的得分
+    @staticmethod
+    def cal_score_on_time(rate):
+        if rate >= 0.997:
+            return 100
+        elif rate >= 0.99:
+            return 90
+        elif rate >= 0.9:
+            return 80
+        elif rate >= 0.8:
+            return 70
+        else:
+            return 60
+
+    # 计算成功解决率的得分
+    @staticmethod
+    def cal_score_all_solved(rate):
         if rate >= 0.995:
             return 100
         elif rate >= 0.98:
@@ -341,6 +379,34 @@ class MyGUI:
             return 70
         else:
             return 10 * int(rate / 0.1)
+
+    # 计算用户平均满意度的得分
+    @staticmethod
+    def cal_score_ave_satisfied(level):
+        if level >= 99.5:
+            return 100
+        elif level >= 98:
+            return 90
+        elif level >= 80:
+            return 80
+        elif level >= 70:
+            return 70
+        else:
+            return 10 * int(level / 10)
+
+    # 计算工作能力得分
+    @staticmethod
+    def cal_score_work_ability(hour):
+        if hour <= 1:
+            return 100
+        elif hour <= 4:
+            return 90
+        elif hour <= 12:
+            return 80
+        elif hour <= 48:
+            return 70
+        else:
+            return 60
 
 
 # 选择考核人员弹窗
@@ -549,7 +615,7 @@ class ExcelMaster:
         name_dict = Counter(self.table.col_values(i, start_rowx=1, end_rowx=None))
         return name_dict
 
-    # 返回员工“根本解决”的事件总数
+    # 返回员工“成功解决”的事件总数
     def get_num_all_solved(self, name):
         print("正在查询: " + name)
         m = self.col_index('处理人')
