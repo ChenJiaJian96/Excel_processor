@@ -219,7 +219,7 @@ class MyGUI:
         for name in name_dict.keys():
             total_num = name_dict[name]  # 事件总数
             cur_num = self.data.get_num_all_solved(name)  # 根本解决事件数
-            rate = round(cur_num / total_num, 3)
+            rate = round(cur_num / total_num, 4)
             score = self.cal_score_all_solved(rate)
             name_dict[name] = [total_num, cur_num, rate * 100, score]
         # 输出结果
@@ -261,6 +261,8 @@ class MyGUI:
             num_list3.append(name_dict[name][2])
             num_list4.append(name_dict[name][3])
         x = range(len(num_list1))
+        # 设置画布大小
+        plt.figure(figsize=(len(label_list) + 7, 5))
         rects1 = plt.bar(x=[i + 0.2 for i in x], height=num_list1, width=0.2, alpha=0.8, color='red', label="事件完成数")
         rects2 = plt.bar(x=[i + 0.4 for i in x], height=num_list2, width=0.2, color='green', label="事件根本解决数")
         rects3 = plt.bar(x=[i + 0.6 for i in x], height=num_list3, width=0.2, color='blue', label="事件根本解决率(%)")
@@ -269,11 +271,15 @@ class MyGUI:
         plt.ylim(0, max(max(num_list1), 105))
         plt.xlim(0, len(label_list))
         # 中点坐标，显示值
+        label_font = {'family': 'Arial',
+                      'weight': 'normal',
+                      'size': 10,
+                      }
         plt.xticks([index + 0.5 for index in x], label_list)
         plt.xlabel("员工姓名")
         plt.ylabel("数量（得分）")
         plt.title("员工根本解决率统计图表")
-        plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))  # 设置题注
+        plt.legend(bbox_to_anchor=(1.01, 1), loc=2, borderaxespad=0., handleheight=1.675)
         #  编辑文本
         for rect in rects1:
             height = rect.get_height()
@@ -287,7 +293,7 @@ class MyGUI:
         for rect in rects4:
             height = rect.get_height()
             plt.text(rect.get_x() + rect.get_width() / 2, height + 1, str(height), ha="center", va="bottom")
-
+        plt.tight_layout()
         initial_filename = "员工根本解决率统计图表"
         filename = filedialog.asksaveasfilename(title="保存文件",
                                                 filetype=[('图片文件', '*.png')],
