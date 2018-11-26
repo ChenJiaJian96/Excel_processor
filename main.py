@@ -82,6 +82,8 @@ class MyGUI:
 
         self.bottom_label.place(relx=0.4, rely=0.95, relwidth=0.2, relheight=0.05)
 
+        self.set_button_state(0)
+
     # 打开文件
     def open_file(self):
         file_name = filedialog.askopenfilename(title='打开文件',
@@ -120,24 +122,26 @@ class MyGUI:
     # 使按钮失效，无法使用
     def set_button_state(self, i):
         if i == 0:
-            self.open_file_button.config(state=DISABLED)
             self.export_file_button.config(state=DISABLED)
             self.change_examiners_button.config(state=DISABLED)
         elif i == 1:
-            self.open_file_button.config(state=ACTIVE)
             self.export_file_button.config(state=ACTIVE)
             self.change_examiners_button.config(state=ACTIVE)
 
     # 设置员工列表
     def setup_staff_list(self):
-
         res = self.open_staff_list()
         print(res)
-        if res is None:
+        if res is None or len(res) == 0:
             self.write_log("抱歉，你并未选择任何员工")
+            if len(self.examiner_list) != 0:
+                self.write_log("当前选择考核的员工为：" + str(self.examiner_list))
         else:
             self.write_log("当前选择考核的员工为：" + str(res))
             self.examiner_list = res
+        # 若员工名单为空，不允许导出
+        if len(self.examiner_list) == 0:
+            self.export_file_button.config(state=DISABLED)
 
     # 开始选择员工列表
     def open_staff_list(self):
@@ -150,15 +154,12 @@ class MyGUI:
 
     # 导出文件
     def export_file(self):
-        if self.data is None:
-            self.write_log("请先打开您需要处理的文件")
+        res = self.open_export_dialog()
+        print(res)
+        if res is None:
+            self.write_log("你取消了导出操作")
         else:
-            res = self.open_export_dialog()
-            print(res)
-            if res is None:
-                self.write_log("你取消了导出操作")
-            else:
-                self.proceed_data(res)
+            self.proceed_data(res)
 
     def open_export_dialog(self):
         export_dialog = ExportDialog()
@@ -289,8 +290,8 @@ class MyGUI:
 
         initial_filename = "员工根本解决率统计图表"
         filename = filedialog.asksaveasfilename(title="保存文件",
-                                                filetype=[('图片文件', '*.jpg')],
-                                                defaultextension='.jpg',
+                                                filetype=[('图片文件', '*.png')],
+                                                defaultextension='.png',
                                                 initialfile=initial_filename)
         try:
             plt.savefig(filename)
@@ -446,6 +447,8 @@ class ExaminerDialog:
 # 选择导出文件弹窗
 class ExportDialog:
     def __init__(self):
+        self.value_list1 = (option1, option2, option3, option4, option5, option6, option7)
+        self.value_list2 = (option2, option3, option4, option5, option6, option7)
         self.rootWindow = Toplevel()
         self.rootWindow.title('导出设置')
         self.rootWindow.geometry("300x180+250+250")
@@ -462,7 +465,7 @@ class ExportDialog:
         self.xls_cb.select()
         self.combo_var = StringVar()
         self.text_cb = ttk.Combobox(self.rootWindow, textvariable=self.combo_var)
-        self.text_cb['values'] = (option1, option2, option3, option4, option5, option6, option7)
+        self.text_cb['values'] = self.value_list1
         self.text_cb['state'] = "readonly"
         self.text_cb.current(0)
         self.confirm_button = Button(self.rootWindow, text="确认", command=self.ok)
@@ -472,10 +475,14 @@ class ExportDialog:
     def call_xls(self):
         self.xls_cb.select()
         self.img_cb.deselect()
+        self.text_cb['values'] = self.value_list1
+        self.text_cb.current(0)
 
     def call_img(self):
         self.img_cb.select()
         self.xls_cb.deselect()
+        self.text_cb['values'] = self.value_list2
+        self.text_cb.current(0)
 
     def init_ui(self):
         self.format_label.place(relx=0.05, rely=0.05, relwidth=0.3, relheight=0.15)
