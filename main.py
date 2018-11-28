@@ -652,6 +652,14 @@ class StandardDialog:
         tree.place(relx=0, rely=0, relwidth=1, relheight=1)
 
 
+# 显示使用流程弹窗
+class InstructionDialog:
+    def __init__(self):
+        self.rootWindow = Toplevel()
+        self.rootWindow.title('使用流程和常见问题')
+        self.rootWindow.geometry("780x580+250+250")
+
+
 # 数据类
 class ExcelMaster:
     def __init__(self, data):
