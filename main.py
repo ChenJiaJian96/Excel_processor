@@ -1,6 +1,7 @@
 from tkinter import *
 from tkinter import filedialog
 from tkinter import messagebox
+from tkinter import scrolledtext
 from tkinter import ttk
 from xlrd import open_workbook, XLRDError
 from xlwt import Workbook, Font, XFStyle
@@ -138,11 +139,12 @@ class MyGUI:
 
     # 显示软件详情
     def show_software_detail(self, event):
-        self.write_log("show_software_detail.")
+        messagebox.showinfo("关于", "ISBN:\n著作权人:\n出版单位:")
 
     # 显示操作说明
     def show_instruction(self, event):
-        self.write_log("show_instruction")
+        instruction_dialog = InstructionDialog()
+        self.init_window.wait_window(instruction_dialog.rootWindow)
 
     # 设置员工列表
     def setup_staff_list(self):
@@ -657,8 +659,22 @@ class InstructionDialog:
     def __init__(self):
         self.rootWindow = Toplevel()
         self.rootWindow.title('使用流程和常见问题')
-        self.rootWindow.geometry("780x580+250+250")
+        self.rootWindow.geometry("500x400+250+250")
 
+        self.guide_button = Button(self.rootWindow, text="使用流程")
+        self.quest_button = Button(self.rootWindow, text="常见问题")
+        v=StringVar()
+        v.set("欢迎查阅使用流程及常见问题")
+        self.content_text = scrolledtext.ScrolledText(self.rootWindow)
+        self.box_scrollbar_y = Scrollbar(self.rootWindow)
+
+        self.guide_button.place(relx=0.27, rely=0.03, relwidth=0.2, relheight=0.1)
+        self.quest_button.place(relx=0.53, rely=0.03, relwidth=0.2, relheight=0.1)
+        self.content_text.place(relx=0.02, rely=0.16, relwidth=0.96, relheight=0.81)
+
+        # self.box_scrollbar_y.config(command=self.content_text.yview)
+        # self.content_text.config(yscrollcommand=self.box_scrollbar_y.set)
+        # self.box_scrollbar_y.place(relx=0.35, rely=0.3, relheight=0.65)
 
 # 数据类
 class ExcelMaster:
