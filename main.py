@@ -1,8 +1,5 @@
 from tkinter import *
-from tkinter import filedialog
-from tkinter import messagebox
-from tkinter import scrolledtext
-from tkinter import ttk
+from tkinter import filedialog, messagebox, scrolledtext, ttk
 from xlrd import open_workbook, XLRDError
 from xlwt import Workbook, Font, XFStyle
 from time import strftime, localtime, mktime, strptime, time
@@ -81,7 +78,7 @@ class MyGUI:
         self.more_label.place(relx=0.93, rely=0.7, relwidth=0.03, relheight=0.08)
         self.question_label.bind("<Button-1>", self.show_instruction)
         self.question_label.place(relx=0.93, rely=0.8, relwidth=0.03, relheight=0.08)
-        self.exclamation_label.bind("<Button-1>", self.show_software_detail)
+        self.exclamation_label.bind("<Button-1>", func=self.show_software_detail)
         self.exclamation_label.place(relx=0.93, rely=0.9, relwidth=0.03, relheight=0.08)
 
         self.bottom_label.place(relx=0.4, rely=0.95, relwidth=0.2, relheight=0.05)
@@ -138,7 +135,8 @@ class MyGUI:
         self.init_window.wait_window(standard_dialog.rootWindow)
 
     # 显示软件详情
-    def show_software_detail(self, event):
+    @staticmethod
+    def show_software_detail(event):
         messagebox.showinfo("关于", "ISBN:\n著作权人:\n出版单位:")
 
     # 显示操作说明
@@ -661,20 +659,44 @@ class InstructionDialog:
         self.rootWindow.title('使用流程和常见问题')
         self.rootWindow.geometry("500x400+250+250")
 
-        self.guide_button = Button(self.rootWindow, text="使用流程")
-        self.quest_button = Button(self.rootWindow, text="常见问题")
-        v=StringVar()
-        v.set("欢迎查阅使用流程及常见问题")
-        self.content_text = scrolledtext.ScrolledText(self.rootWindow)
+        self.guide_button = Button(self.rootWindow, text="使用流程", command=lambda: self.update_text(1))
+        self.quest_button = Button(self.rootWindow, text="常见问题", command=lambda: self.update_text(2))
+        self.wel_text = "欢迎查阅使用流程及常见问题"
+        self.guide_text = "使用说明\n\n" \
+                          "一、使用流程\n" \
+                          "打开文件->修改考核人员名单->导出文件->退出系统\n\n" \
+                          "二、打开文件\n" \
+                          "2.1--本系统可以打开常用的表格文件，如.xlsx/.xls/.et等文件。请在打开文件窗中选中需要打开的文件，" \
+                          "若文件过大需要耐心等待一段时间，未打开文件将无法使用导出/修改考核名单功能；\n" \
+                          "2.2--文件完整性检查，为了使本系统的功能均能正常使用，打开文件后会进行完整性检查，主要检查文件中是否" \
+                          "存在以下列，包括‘处理人’、‘结束代码’等，若数据不完整，将无法进行进一步导出。\n\n" \
+                          "三、修改考核人员名单\n" \
+                          "3.1--鉴于导入文件可能数据量过大，并针对软件开发需求，导出数据将从‘处理人’列中的个别或全部项计算得出，" \
+                          "导出文件会按照选择的考核名单进行针对性导出；\n" \
+                          "3.2--在成功导入完整数据文件后，会直接进入修改考核人员名单的界面，而在导出文件前的任意时刻也可以选择更改，" \
+                          "若使用者在选择界面中未选择任何人员，会默认保持为最近一次的名单；\n" \
+                          "3.3--修改考核人员名单界面中，用户可以在左侧的名单列表中选择需要添加的名单，点击添加按钮即可添加，" \
+                          "添加成功后的人员会显示在右侧栏，相应地，可以选择删除对应人员名单；\n" \
+                          "3.4--上述界面搜索功能，用户可以在位于界面上侧搜索栏搜索对应人员，并执行后续操作，当搜索栏为空并选择‘搜索’按钮后，" \
+                          "名单会从搜索特定名单恢复为全部名单；\n" \
+                          "3.5--完成选择后点击确认按钮返回主界面，并完成考核名单的修改。\n\n"
+        self.quest_text = "常见问题说明\n"
+        self.content_text = scrolledtext.ScrolledText(self.rootWindow, wrap=WORD)
         self.box_scrollbar_y = Scrollbar(self.rootWindow)
 
         self.guide_button.place(relx=0.27, rely=0.03, relwidth=0.2, relheight=0.1)
         self.quest_button.place(relx=0.53, rely=0.03, relwidth=0.2, relheight=0.1)
         self.content_text.place(relx=0.02, rely=0.16, relwidth=0.96, relheight=0.81)
 
-        # self.box_scrollbar_y.config(command=self.content_text.yview)
-        # self.content_text.config(yscrollcommand=self.box_scrollbar_y.set)
-        # self.box_scrollbar_y.place(relx=0.35, rely=0.3, relheight=0.65)
+    def update_text(self, update_type):
+        self.content_text.delete(1.0, END)
+        if update_type == 1:
+            self.content_text.insert(INSERT, self.guide_text)
+        elif update_type == 2:
+            self.content_text.insert(INSERT, self.quest_text)
+        else:
+            self.content_text.insert(INSERT, self.wel_text)
+
 
 # 数据类
 class ExcelMaster:
