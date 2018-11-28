@@ -76,8 +76,11 @@ class MyGUI:
         self.log_scrollbar_y.place(relx=0.67, rely=0.2, relheight=0.73)
 
         # 生成右侧提示按钮
+        self.more_label.bind("<Button-1>", self.show_score_standard)
         self.more_label.place(relx=0.93, rely=0.7, relwidth=0.03, relheight=0.08)
+        self.question_label.bind("<Button-1>", self.show_instruction)
         self.question_label.place(relx=0.93, rely=0.8, relwidth=0.03, relheight=0.08)
+        self.exclamation_label.bind("<Button-1>", self.show_software_detail)
         self.exclamation_label.place(relx=0.93, rely=0.9, relwidth=0.03, relheight=0.08)
 
         self.bottom_label.place(relx=0.4, rely=0.95, relwidth=0.2, relheight=0.05)
@@ -127,6 +130,19 @@ class MyGUI:
         elif i == 1:
             self.export_file_button.config(state=ACTIVE)
             self.change_examiners_button.config(state=ACTIVE)
+
+    # 显示评分标准
+    def show_score_standard(self, event):
+        standard_dialog = StandardDialog()
+        self.init_window.wait_window(standard_dialog.rootWindow)
+
+    # 显示软件详情
+    def show_software_detail(self, event):
+        self.write_log("show_software_detail.")
+
+    # 显示操作说明
+    def show_instruction(self, event):
+        self.write_log("show_instruction")
 
     # 设置员工列表
     def setup_staff_list(self):
@@ -206,6 +222,9 @@ class MyGUI:
             else:
                 pass
 
+    # # No.1 获取"事件平均响应时长"的数据
+    # def get_ave_response_data(self):
+
     # No.4:获取"事件成功解决率"的数据
     def get_rate_all_solved_data(self):
         temp_dict = self.data.get_name_dict()
@@ -263,16 +282,20 @@ class MyGUI:
         x = range(len(num_list1))
         # 设置画布大小
         plt.figure(figsize=(len(label_list) + 7, 5))
-        rects1 = plt.bar(x=[i + 0.2 for i in x], height=num_list1, width=0.2, alpha=0.8, color='red', label="事件完成数")
-        rects2 = plt.bar(x=[i + 0.4 for i in x], height=num_list2, width=0.2, color='green', label="事件成功解决数")
-        rects3 = plt.bar(x=[i + 0.6 for i in x], height=num_list3, width=0.2, color='blue', label="事件成功解决率(%)")
-        rects4 = plt.bar(x=[i + 0.8 for i in x], height=num_list4, width=0.2, color='yellow', label="该项得分")
+        rects1 = plt.bar(x=[i + 0.2 for i in x], height=num_list1, width=0.2, color='#4F94CD', edgecolor='k',
+                         label="事件完成数")
+        rects2 = plt.bar(x=[i + 0.4 for i in x], height=num_list2, width=0.2, color='#4F94CD', edgecolor='k',
+                         label="事件成功解决数")
+        rects3 = plt.bar(x=[i + 0.6 for i in x], height=num_list3, width=0.2, color='#4F94CD', edgecolor='k',
+                         label="事件成功解决率(%)")
+        rects4 = plt.bar(x=[i + 0.8 for i in x], height=num_list4, width=0.2, color='#4F94CD', edgecolor='k',
+                         label="该项得分")
         # 取值范围
         plt.ylim(0, max(max(num_list1), 105))
         plt.xlim(0, len(label_list))
         # 中点坐标，显示值
         plt.xticks([index + 0.5 for index in x], label_list)
-        plt.xlabel("员工姓名")
+        plt.xlabel("处理人")
         plt.ylabel("数量（得分）")
         plt.title("员工成功解决率统计图表")
         plt.legend(bbox_to_anchor=(1.01, 1), loc=2, borderaxespad=0., handleheight=1.675)
@@ -526,8 +549,7 @@ class ExaminerDialog:
 # 选择导出文件弹窗
 class ExportDialog:
     def __init__(self):
-        self.value_list1 = (option1, option2, option3, option4, option5, option6, option7)
-        self.value_list2 = (option2, option3, option4, option5, option6, option7)
+        self.value_list = (option1, option2, option3, option4, option5, option6, option7)
         self.rootWindow = Toplevel()
         self.rootWindow.title('导出设置')
         self.rootWindow.geometry("300x180+250+250")
@@ -544,7 +566,7 @@ class ExportDialog:
         self.xls_cb.select()
         self.combo_var = StringVar()
         self.text_cb = ttk.Combobox(self.rootWindow, textvariable=self.combo_var)
-        self.text_cb['values'] = self.value_list1
+        self.text_cb['values'] = self.value_list
         self.text_cb['state'] = "readonly"
         self.text_cb.current(0)
         self.confirm_button = Button(self.rootWindow, text="确认", command=self.ok)
@@ -554,14 +576,10 @@ class ExportDialog:
     def call_xls(self):
         self.xls_cb.select()
         self.img_cb.deselect()
-        self.text_cb['values'] = self.value_list1
-        self.text_cb.current(0)
 
     def call_img(self):
         self.img_cb.select()
         self.xls_cb.deselect()
-        self.text_cb['values'] = self.value_list2
-        self.text_cb.current(0)
 
     def init_ui(self):
         self.format_label.place(relx=0.05, rely=0.05, relwidth=0.3, relheight=0.15)
@@ -586,6 +604,52 @@ class ExportDialog:
     def cancel(self):
         self.result_list = None  # 清空弹窗数据
         self.rootWindow.destroy()
+
+
+# 显示评分标准弹窗
+class StandardDialog:
+    def __init__(self):
+        self.rootWindow = Toplevel()
+        self.rootWindow.title('评分标准')
+        self.rootWindow.geometry("780x580+250+250")
+        style = ttk.Style()
+        style.configure('Calendar.Treeview', rowheight=90)
+        tree = ttk.Treeview(self.rootWindow, show="headings", style='Calendar.Treeview')  # 表格
+        tree["columns"] = ("序号", "项目", "单位", "指标", "描述", "评分标准")
+        tree.column("序号", width=40, anchor=CENTER)
+        tree.column("项目", width=110, anchor=CENTER)
+        tree.column("单位", width=40, anchor=CENTER)
+        tree.column("指标", width=80)
+        tree.column("描述", width=330)
+        tree.column("评分标准", width=180)
+
+        tree.heading("序号", text="序号")
+        tree.heading("项目", text="项目")
+        tree.heading("单位", text="单位")
+        tree.heading("指标", text="指标")
+        tree.heading("描述", text="描述")
+        tree.heading("评分标准", text="评分标准")
+
+        tree.insert("", 0, values=(
+            "1", "事件平均响应时长", "小时", "地市局指标", "已响应事件工单响应总时长/已响应事件工单总数*100%。\n反映每张事件工单的平均响应时长。",
+            "<=0.2, 100分；\n<=0.5且>0.2, 90分；\n<=1且>0.5, 80分；\n<=3且>1, 70分；\n>3, 60分及以下\n"), tags='T')
+        tree.insert("", 1, values=(
+            "2", "事件响应超时率", "%", "地市局指标", "响应超时事件工单总量/事件工单总量*100%。\n反映1000号运维人员对事件工单进行响应的超时情况。",
+            "<=0.1%, 100分；\n<=1%且>0.1%, 90分；\n<=10%且>1%, 80分；\n<=20%且>10%, 70分；\n>20%, 60分及以下\n"), tags='T')
+        tree.insert("", 2, values=(
+            "3", "事件按时解决率", "%", "地市局指标", "按时解决事件工单总量/事件工单总量*100%。\n反映1000号运维人员是否能够在服务等级（SLA）协议内\n解决事件工单的情况。",
+            ">=99.7%, 100分；\n>=99%且<99.7%, 90分；\n>=90%且<99%, 80分；\n>=80%且<90%, 70分；\n<80%, 60分及以下\n"), tags='T')
+        tree.insert("", 3, values=(
+            "4", "事件成功解决率", "%", "地市局指标", "事件关闭代码为“根本解决”的事件总数/事件总数*100%。\n反映事件根本解决的能力。",
+            ">=99.5%, 100分；\n>=98%且<99.5%, 90分；\n>=80%且<98%, 80分；\n>=70%且<80%, 70分；\n<70%, 60分及以下\n"), tags='T')
+        tree.insert("", 4, values=("5", "客户平均满意度", "", "地市局指标", "Σ满意度/统计次数\n反映客户对IT服务的程度情况",
+                                   ">=99.5%, 100分；\n>=98%且<99.5%, 90分；\n>=80%且<98%, 80分；\n>=70%且<80%, 70分；\n<70%, "
+                                   "60分及以下\n"), tags='T')
+        tree.insert("", 5, values=(
+            "6", "事件平均解决时长", "小时", "地市局指标", "已解决事件工单解决总时长/已解决事件工单总数*100%。\n反映每张事件工单的平均解决时长",
+            "<=1, 100分；\n<=4且>1, 90分；\n<=12且>4, 80分；\n<=48且>12, 70分；\n>48, 60分及以下\n"), tags='T')
+        tree.tag_configure('T')
+        tree.place(relx=0, rely=0, relwidth=1, relheight=1)
 
 
 # 数据类
@@ -644,7 +708,8 @@ class ExcelMaster:
 
     # 计算两个字符串时间('%Y/%m/%d %H:%M')的时间差: str2 - str1
     # 返回时间间隔, 单位: s
-    def minus_time_in_str(self, str1, str2):
+    @staticmethod
+    def minus_time_in_str(str1, str2):
         time1 = strptime(str1, '%Y/%m/%d %H:%M')
         time2 = strptime(str2, '%Y/%m/%d %H:%M')
         return mktime(time2) - mktime(time1)
