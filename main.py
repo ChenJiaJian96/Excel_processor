@@ -19,7 +19,8 @@ option4 = "仅导出指定员工的“按时解决率”情况"
 option5 = "仅导出指定员工的“成功解决”情况"
 option6 = "仅导出指定员工的“平均满意度”情况"
 option7 = "仅导出指定员工的“平均解决时长”情况"
-
+global ico_path
+ico_path = "./CSPGCL.ico"
 rcParams['font.sans-serif'] = ['SimHei']
 
 
@@ -56,9 +57,10 @@ class MyGUI:
 
     # 定义组件放置位置
     def set_init_window(self):
-        self.init_window.title("Excel自动化处理工具")  # 指定标题
+        self.init_window.title("南方电网员工信息处理系统")  # 指定标题
         self.init_window.geometry("500x265+100+100")  # 指定初始化大小以及出现位置
         # self.init_window.attributes("-alpha", 0.8)  # 指定透明度
+        self.init_window.iconbitmap(ico_path)
 
         self.log_label.place(relx=0.05, rely=0.05, relwidth=0.6, relheight=0.1)
         self.operate_label.place(relx=0.7, rely=0.05, relwidth=0.2, relheight=0.1)
@@ -440,6 +442,7 @@ class ExaminerDialog:
         self.rootWindow = Toplevel()
         self.rootWindow.title('设置考勤名单')
         self.rootWindow.geometry("600x300+250+250")
+        self.rootWindow.iconbitmap(ico_path)
         self.search_text = Entry(self.rootWindow)
         self.name_list_label = Label(self.rootWindow, text="表格名单(点击多选）")
         self.selected_list_label = Label(self.rootWindow, text="选中名单列表")
@@ -553,6 +556,7 @@ class ExportDialog:
         self.rootWindow = Toplevel()
         self.rootWindow.title('导出设置')
         self.rootWindow.geometry("300x180+250+250")
+        self.rootWindow.iconbitmap(ico_path)
         self.result_list = []
 
         self.format_label = Label(self.rootWindow, text="导出格式")
@@ -612,6 +616,7 @@ class StandardDialog:
         self.rootWindow = Toplevel()
         self.rootWindow.title('评分标准')
         self.rootWindow.geometry("780x580+250+250")
+        self.rootWindow.iconbitmap(ico_path)
         style = ttk.Style()
         style.configure('Calendar.Treeview', rowheight=90)
         tree = ttk.Treeview(self.rootWindow, show="headings", style='Calendar.Treeview')  # 表格
@@ -658,10 +663,11 @@ class InstructionDialog:
         self.rootWindow = Toplevel()
         self.rootWindow.title('使用流程和常见问题')
         self.rootWindow.geometry("500x400+250+250")
+        self.rootWindow.iconbitmap(ico_path)
 
         self.guide_button = Button(self.rootWindow, text="使用流程", command=lambda: self.update_text(1))
         self.quest_button = Button(self.rootWindow, text="常见问题", command=lambda: self.update_text(2))
-        self.wel_text = "欢迎查阅使用流程及常见问题"
+        self.wel_text = "欢迎查阅使用流程及常见问题\n\n请点击上面按钮进行查询↑↑↑"
         self.guide_text = "使用说明\n\n" \
                           "一、使用流程\n" \
                           "打开文件->修改考核人员名单->导出文件->退出系统\n\n" \
@@ -679,7 +685,9 @@ class InstructionDialog:
                           "添加成功后的人员会显示在右侧栏，相应地，可以选择删除对应人员名单；\n" \
                           "3.4--上述界面搜索功能，用户可以在位于界面上侧搜索栏搜索对应人员，并执行后续操作，当搜索栏为空并选择‘搜索’按钮后，" \
                           "名单会从搜索特定名单恢复为全部名单；\n" \
-                          "3.5--完成选择后点击确认按钮返回主界面，并完成考核名单的修改。\n\n"
+                          "3.5--完成选择后点击确认按钮返回主界面，并完成考核名单的修改。\n\n" \
+                          "四、导出文件\n" \
+                          "4.1--在导出文件弹窗中"
         self.quest_text = "常见问题说明\n"
         self.content_text = scrolledtext.ScrolledText(self.rootWindow, wrap=WORD)
         self.box_scrollbar_y = Scrollbar(self.rootWindow)
@@ -687,6 +695,7 @@ class InstructionDialog:
         self.guide_button.place(relx=0.27, rely=0.03, relwidth=0.2, relheight=0.1)
         self.quest_button.place(relx=0.53, rely=0.03, relwidth=0.2, relheight=0.1)
         self.content_text.place(relx=0.02, rely=0.16, relwidth=0.96, relheight=0.81)
+        self.update_text(0)
 
     def update_text(self, update_type):
         self.content_text.delete(1.0, END)
