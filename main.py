@@ -688,6 +688,7 @@ class MyGUI:
 
 # 选择考核人员弹窗
 class ExaminerDialog:
+    # TODO:添加历史选择
     def __init__(self, name_list):
         self.name_list = name_list  # 传过来的名单
         self.result_list = []  # 需要发出去的名单
@@ -727,8 +728,6 @@ class ExaminerDialog:
         self.box_scrollbar_y.config(command=self.name_list_box.yview)
         self.name_list_box.config(yscrollcommand=self.box_scrollbar_y.set)
         self.box_scrollbar_y.place(relx=0.35, rely=0.3, relheight=0.65)
-        # TODO: 对名单进行初步处理，去除能删掉的脏数据
-
         # 对名单进行排序，优化用户体验
         # TODO：排序规则存在问题
         self.refresh_name_list()
@@ -736,7 +735,8 @@ class ExaminerDialog:
     def refresh_name_list(self):
         self.name_list_box.delete(0, END)
         try:
-            self.name_list.sort()
+            engine = SortEngine()
+            self.name_list = engine.cnsort(self.name_list)
         except TypeError:
             messagebox.showwarning("表格内容错误", "表格员工列中出现非法内容，导致列表无法自动排序\n"
                                              "——非法字符包括数字、空格等，请自行删除。")
@@ -941,7 +941,8 @@ class InstructionDialog:
                           "3.5--完成选择后点击确认按钮返回主界面，并完成考核名单的修改。\n\n" \
                           "四、导出文件\n" \
                           "4.1--在导出文件弹窗中balabala"
-        self.quest_text = "常见问题说明\n"
+        self.quest_text = "常见问题说明\n\n" \
+                          "1.为什么选择考核名单弹窗->表格名单中"
         self.content_text = scrolledtext.ScrolledText(self.rootWindow, wrap=WORD)
         self.box_scrollbar_y = Scrollbar(self.rootWindow)
 
@@ -982,12 +983,16 @@ class ExcelMaster:
     def get_name_list(self):
         i = self.col_index('处理人')
         name_dict = Counter(self.table.col_values(i, start_rowx=1, end_rowx=None))
+        if name_dict.keys().__contains__(""):
+            del name_dict[""]
         return list(name_dict.keys())
 
     # 返回表格的员工完成事件数
     def get_name_dict(self):
         i = self.col_index('处理人')
         name_dict = Counter(self.table.col_values(i, start_rowx=1, end_rowx=None))
+        if name_dict.keys().__contains__(""):
+            del name_dict[""]
         return name_dict
 
     # 返回员工的响应总时长
@@ -1119,5 +1124,94 @@ class ExcelMaster:
         else:
             return i
 
+
+# 排序类
+class SortEngine:
+    def __init__(self):
+        self.dic_py = dict()
+        self.dic_bh = dict()
+        # 建立拼音辞典
+        with open('./py.txt', 'r', encoding='utf8') as f:
+            content_py = f.readlines()
+
+            for i in content_py:
+                i = i.strip()
+                word_py, mean_py = i.split('\t')
+                self.dic_py[word_py] = mean_py
+
+        # 建立笔画辞典
+        with open('./bh.txt', 'r', encoding='utf8') as f:
+            content_bh = f.readlines()
+
+            for i in content_bh:
+                i = i.strip()
+                word_bh, mean_bh = i.split('\t')
+                self.dic_bh[word_bh] = mean_bh
+
+    ###############################
+    # 辞典查找函数
+    def searchdict(self, dic, uchar):
+        if u'\u4e00' <= uchar <= u'\u9fa5':
+            value = dic.get(uchar)
+            if value == None:
+                value = '*'
+        else:
+            value = uchar
+        return value
+
+    # 比较单个字符
+    def comp_char_PY(self, A, B):
+        if A == B:
+            return -1
+        pyA = self.searchdict(self.dic_py, A)
+        pyB = self.searchdict(self.dic_py, B)
+
+        # 比较拼音
+        if pyA > pyB:
+            return 1
+        elif pyA < pyB:
+            return 0
+
+        # 比较笔画
+        else:
+            bhA = eval(self.searchdict(self.dic_bh, A))
+            bhB = eval(self.searchdict(self.dic_bh, B))
+            if bhA > bhB:
+                return 1
+            elif bhA < bhB:
+                return 0
+            else:
+                return "拼音相同，笔画也相同？"
+
+    # 比较字符串
+    def comp_char(self, A, B):
+
+        n = min(len(A), len(B))
+        i = 0
+        while i < n:
+            dd = self.comp_char_PY(A[i], B[i])
+            # 如果第一个单词相等，就继续比较下一个单词
+            if dd == -1:
+                i = i + 1
+                # 如果比较到头了
+                if i == n:
+                    dd = len(A) > len(B)
+            else:
+                break
+        return dd
+
+    # 排序函数
+    def cnsort(self, nline):
+        n = len(nline)
+        lines = "\n".join(nline)
+
+        for i in range(1, n):  # 插入法
+            tmp = nline[i]
+            j = i
+            while j > 0 and self.comp_char(nline[j - 1], tmp):
+                nline[j] = nline[j - 1]
+                j -= 1
+            nline[j] = tmp
+        return nline
 
 MyGUI()  # 启动窗口
