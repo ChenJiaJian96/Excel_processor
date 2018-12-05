@@ -269,10 +269,36 @@ class MyGUI:
                 self.write_log('导出成功。文件保存至：' + file_name)
         # 用户选择导出图片
         elif res[0] == 2:
-            if res[1] == option5:
+            if res[1] == option1:
+                name_dict_list = []
+                name_list = self.examiner_list
+                name_dict_list.append(self.get_ave_response_data())
+                name_dict_list.append(self.get_over_time_data())
+                name_dict_list.append(self.get_on_time_data())
+                name_dict_list.append(self.get_rate_all_solved_data())
+                name_dict_list.append(self.get_rate_ave_satisfied_data())
+                name_dict_list.append(self.get_ave_solved_data())
+                png_element = ["事件完成数", "事件超时解决数", "事件超时解决率(%)", "该项得分", "处理人", "数量（得分）", "员工超时解决率统计图表", "员工超时解决率统计图表"]
+                self.get_total_png_by_data(name_list, name_dict_list, png_element)
+            elif res[1] == option2:
+                pass
+            elif res[1] == option3:
+                name_dict = self.get_on_time_data()
+                png_element = ["事件完成数", "事件超时解决数", "事件超时解决率(%)", "该项得分", "处理人", "数量（得分）", "员工超时解决率统计图表", "员工超时解决率统计图表"]
+                self.get_png_by_data(name_dict, png_element)
+            elif res[1] == option4:
+                name_dict = self.get_on_time_data()
+                png_element = ["事件完成数", "事件按时解决数", "事件按时解决率(%)", "该项得分", "处理人", "数量（得分）", "员工按时解决率统计图表", "员工超时解决率统计图表"]
+                self.get_png_by_data(name_dict, png_element)
+            elif res[1] == option5:
                 name_dict = self.get_rate_all_solved_data()
-                self.get_rate_all_solved_png(name_dict)
-            else:
+                png_element = ["事件完成数", "事件成功解决数", "事件成功解决率(%)", "该项得分", "处理人", "数量（得分）", "员工成功解决率统计图表", "员工成功解决率统计图表"]
+                self.get_png_by_data(name_dict, png_element)
+            elif res[1] == option6:
+                name_dict = self.get_rate_ave_satisfied_data()
+                png_element = ["事件完成数", "客户满意数", "事件满意率(%)", "该项得分", "处理人", "数量（得分）", "客户平均满意率统计图表", "员工成功解决率统计图表"]
+                self.get_png_by_data(name_dict, png_element)
+            elif res[1] == option7:
                 pass
 
     # No.1:获取"事件平均响应时长"的数据
@@ -443,8 +469,58 @@ class MyGUI:
             x = x + 1
             y = 0
 
-    # No.4:获取"事件成功解决率"导出图片
-    def get_rate_all_solved_png(self, name_dict):
+    # 根据数据导出全部图片
+    def get_total_png_by_data(self, name_list, name_dict_list):
+        # TODO!!!!!!!!!!!!!!!
+        num_list1, num_list2, num_list3, num_list4, num_list5, num_list6 = [], [], [], [], [], []
+        label_list = ["事件平均解决时长", "事件响应超时率", "事件按时解决率", "事件成功解决率", "客户平均满意度", "事件平均解决时长"]
+        for name in name_list:
+            num_list1.append(name_dict_list[0][name][3])
+            num_list2.append(name_dict_list[1][name][3])
+            num_list3.append(name_dict_list[2][name][3])
+            num_list4.append(name_dict_list[3][name][3])
+            num_list5.append(name_dict_list[4][name][3])
+            num_list6.append(name_dict_list[5][name][3])
+        x = range(len(num_list1))
+        # 设置画布大小
+        plt.figure(figsize=(len(label_list) + 7, 5))
+        rect_list = []
+        rect_width = 1 / (len(name_list) + 1)
+        for m in range(len(name_list)):
+            rects = plt.bar(x=[i + rect_width * (m + 1) for i in x], height=num_list1, width=rect_width, color='#4F94CD',
+                            edgecolor='k', label=name_list[m])
+            rect_list.append(rects)
+        # 取值范围
+        plt.ylim(0, 105)
+        plt.xlim(0, len(label_list))
+        # 中点坐标，显示值
+        plt.xticks([index + 0.5 for index in x], label_list)
+        plt.xlabel("评判标准")
+        plt.ylabel("该项得分")
+        plt.title("员工各项标准得分")
+        plt.legend(bbox_to_anchor=(1.01, 1), loc=2, borderaxespad=0., handleheight=1.675)
+        #  编辑文本
+        for cur_rect in rect_list:
+            for rect in cur_rect:
+                height = rect.get_height()
+                plt.text(rect.get_x() + rect.get_width() / 2, height + 1, str(height), ha="center", va="bottom")
+        plt.tight_layout()
+        initial_filename = "员工各项标准得分情况统计表"
+        filename = filedialog.asksaveasfilename(title="保存文件",
+                                                filetype=[('图片文件', '*.png')],
+                                                defaultextension='.png',
+                                                initialfile=initial_filename)
+        try:
+            plt.savefig(filename)
+        except PermissionError:
+            self.write_log("权限出错，导出中断。")
+        except FileNotFoundError:
+            self.write_log("你点击了取消，导出中断。")
+        else:
+            self.write_log("导出图表成功，文件保存至：" + filename)
+
+    # 根据数据导出个别图片
+    def get_png_by_data(self, name_dict, png_element):
         label_list, num_list1, num_list2, num_list3, num_list4 = [], [], [], [], []
         for name in name_dict:
             label_list.append(name)
@@ -456,21 +532,21 @@ class MyGUI:
         # 设置画布大小
         plt.figure(figsize=(len(label_list) + 7, 5))
         rects1 = plt.bar(x=[i + 0.2 for i in x], height=num_list1, width=0.2, color='#4F94CD', edgecolor='k',
-                         label="事件完成数")
+                         label=png_element[0])
         rects2 = plt.bar(x=[i + 0.4 for i in x], height=num_list2, width=0.2, color='#4F94CD', edgecolor='k',
-                         label="事件成功解决数")
+                         label=png_element[1])
         rects3 = plt.bar(x=[i + 0.6 for i in x], height=num_list3, width=0.2, color='#4F94CD', edgecolor='k',
-                         label="事件成功解决率(%)")
+                         label=png_element[2])
         rects4 = plt.bar(x=[i + 0.8 for i in x], height=num_list4, width=0.2, color='#4F94CD', edgecolor='k',
-                         label="该项得分")
+                         label=png_element[3])
         # 取值范围
-        plt.ylim(0, max(max(num_list1), 105))
+        plt.ylim(0, max(max(num_list1) + 5, 105))
         plt.xlim(0, len(label_list))
         # 中点坐标，显示值
         plt.xticks([index + 0.5 for index in x], label_list)
-        plt.xlabel("处理人")
-        plt.ylabel("数量（得分）")
-        plt.title("员工成功解决率统计图表")
+        plt.xlabel(png_element[4])
+        plt.ylabel(png_element[5])
+        plt.title(png_element[6])
         plt.legend(bbox_to_anchor=(1.01, 1), loc=2, borderaxespad=0., handleheight=1.675)
         #  编辑文本
         for rect in rects1:
@@ -486,7 +562,7 @@ class MyGUI:
             height = rect.get_height()
             plt.text(rect.get_x() + rect.get_width() / 2, height + 1, str(height), ha="center", va="bottom")
         plt.tight_layout()
-        initial_filename = "员工成功解决率统计图表"
+        initial_filename = png_element[7]
         filename = filedialog.asksaveasfilename(title="保存文件",
                                                 filetype=[('图片文件', '*.png')],
                                                 defaultextension='.png',
@@ -499,7 +575,6 @@ class MyGUI:
             self.write_log("你点击了取消，导出中断。")
         else:
             self.write_log("导出图表成功，文件保存至：" + filename)
-        plt.show()
 
     # No.5:获取"客户平均满意度"数据
     def get_rate_ave_satisfied_data(self):
