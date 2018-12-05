@@ -110,27 +110,26 @@ class MyGUI:
     def check_file_integrity(self):
         self.write_log("开始检查文件完整性")
         flag = 0
-        # TODO:!!!
         if self.data.col_index('处理人') == -1:
-            self.write_log("打开的文件中找不到列：“处理人”，无法导出员工名单")
+            self.write_log("打开的文件中找不到列：“处理人”")
             flag = 1
         if self.data.col_index('结束代码') == -1:
-            self.write_log("打开的文件中找不到列：“结束代码”, 无法计算员工成功解决率")
+            self.write_log("打开的文件中找不到列：“结束代码”")
             flag = 1
         if self.data.col_index('派单时间') == -1:
-            self.write_log("打开的文件中找不到列：“派单时间”, 无法计算员工成功解决率")
+            self.write_log("打开的文件中找不到列：“派单时间”")
             flag = 1
         if self.data.col_index('完成时间') == -1:
-            self.write_log("打开的文件中找不到列：“完成时间”, 无法计算员工成功解决率")
+            self.write_log("打开的文件中找不到列：“完成时间”")
             flag = 1
         if self.data.col_index('销单时间') == -1:
-            self.write_log("打开的文件中找不到列：“销单时间”, 无法计算员工成功解决率")
+            self.write_log("打开的文件中找不到列：“销单时间”")
             flag = 1
         if self.data.col_index('处理时间(小时)') == -1:
-            self.write_log("打开的文件中找不到列：“处理时间(小时)”, 无法计算员工成功解决率")
+            self.write_log("打开的文件中找不到列：“处理时间(小时)”")
             flag = 1
         if self.data.col_index('事件优先级') == -1:
-            self.write_log("打开的文件中找不到列：“事件优先级”, 无法计算员工成功解决率")
+            self.write_log("打开的文件中找不到列：“事件优先级”")
             flag = 1
         if flag == 0:
             self.write_log("该文件完整，开始选择考勤名单。")
