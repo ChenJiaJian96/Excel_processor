@@ -1,13 +1,14 @@
+# -*- coding: utf-8 -*-
 from tkinter import *
 from tkinter import filedialog, messagebox, scrolledtext, ttk
-from xlrd import open_workbook, XLRDError
+from xlrd import open_workbook, XLRDError, xldate_as_tuple
 from xlwt import Workbook, Font, XFStyle
 from time import strftime, localtime, mktime, strptime, time
+from datetime import datetime
 from collections import Counter
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
 
-# TODO：导出文件加上工号
 # 打包exe文件
 # pyinstaller -F -w main.py
 
@@ -20,7 +21,7 @@ option5 = "仅导出指定员工的“成功解决”情况"
 option6 = "仅导出指定员工的“平均满意度”情况"
 option7 = "仅导出指定员工的“平均解决时长”情况"
 global ico_path
-ico_path = "./CSPGCL.ico"
+ico_path = ".\CSPGCL.ico"
 rcParams['font.sans-serif'] = ['SimHei']
 
 
@@ -57,7 +58,7 @@ class MyGUI:
 
     # 定义组件放置位置
     def set_init_window(self):
-        self.init_window.title("南方电网员工信息处理系统")  # 指定标题
+        self.init_window.title("IT服务精益化管理系统")  # 指定标题
         self.init_window.geometry("500x265+100+100")  # 指定初始化大小以及出现位置
         # self.init_window.attributes("-alpha", 0.8)  # 指定透明度
         self.init_window.iconbitmap(ico_path)
@@ -108,13 +109,28 @@ class MyGUI:
     def check_file_integrity(self):
         self.write_log("开始检查文件完整性")
         flag = 0
+        # TODO:!!!
         if self.data.col_index('处理人') == -1:
             self.write_log("打开的文件中找不到列：“处理人”，无法导出员工名单")
             flag = 1
         if self.data.col_index('结束代码') == -1:
             self.write_log("打开的文件中找不到列：“结束代码”, 无法计算员工成功解决率")
             flag = 1
-
+        if self.data.col_index('派单时间') == -1:
+            self.write_log("打开的文件中找不到列：“派单时间”, 无法计算员工成功解决率")
+            flag = 1
+        if self.data.col_index('完成时间') == -1:
+            self.write_log("打开的文件中找不到列：“完成时间”, 无法计算员工成功解决率")
+            flag = 1
+        if self.data.col_index('销单时间') == -1:
+            self.write_log("打开的文件中找不到列：“销单时间”, 无法计算员工成功解决率")
+            flag = 1
+        if self.data.col_index('处理时间(小时)') == -1:
+            self.write_log("打开的文件中找不到列：“处理时间(小时)”, 无法计算员工成功解决率")
+            flag = 1
+        if self.data.col_index('事件优先级') == -1:
+            self.write_log("打开的文件中找不到列：“事件优先级”, 无法计算员工成功解决率")
+            flag = 1
         if flag == 0:
             self.write_log("该文件完整，开始选择考勤名单。")
             self.setup_staff_list()
@@ -179,6 +195,7 @@ class MyGUI:
         else:
             self.proceed_data(res)
 
+    # 打开导出文件弹窗
     def open_export_dialog(self):
         export_dialog = ExportDialog()
         self.set_button_state(0)
@@ -196,12 +213,43 @@ class MyGUI:
         elif res[0] == 1:
             initial_filename = ""
             if res[1] == option1:
+                name_dict = self.get_ave_response_data()
+                self.get_ave_response_xls(name_dict)
+                name_dict = self.get_over_time_data()
+                self.get_over_time_xls(name_dict)
+                name_dict = self.get_on_time_data()
+                self.get_on_time_xls(name_dict)
+                name_dict = self.get_rate_all_solved_data()
+                self.get_rate_all_solved_xls(name_dict)
+                name_dict = self.get_rate_ave_satisfied_data()
+                self.get_rate_ave_satisfied_xls(name_dict)
+                name_dict = self.get_ave_solved_data()
+                self.get_ave_solved_xls(name_dict)
                 initial_filename = "员工情况汇总表"
-                pass
-            if res[1] == option5:
+            elif res[1] == option2:
+                name_dict = self.get_ave_response_data()
+                self.get_ave_response_xls(name_dict)
+                initial_filename = "事件平均响应时长"
+            elif res[1] == option3:
+                name_dict = self.get_over_time_data()
+                self.get_over_time_xls(name_dict)
+                initial_filename = "事件响应超时率"
+            elif res[1] == option4:
+                name_dict = self.get_on_time_data()
+                self.get_on_time_xls(name_dict)
+                initial_filename = "事件按时解决率"
+            elif res[1] == option5:
                 name_dict = self.get_rate_all_solved_data()
                 self.get_rate_all_solved_xls(name_dict)
                 initial_filename = "员工事件成功解决率"
+            elif res[1] == option6:
+                name_dict = self.get_rate_ave_satisfied_data()
+                self.get_rate_ave_satisfied_xls(name_dict)
+                initial_filename = "客户平均满意度"
+            elif res[1] == option7:
+                name_dict = self.get_ave_solved_data()
+                self.get_ave_solved_xls(name_dict)
+                initial_filename = "事件平均解决时长"
 
             # 开始导出
             file_name = filedialog.asksaveasfilename(title="保存文件",
@@ -224,8 +272,131 @@ class MyGUI:
             else:
                 pass
 
-    # # No.1 获取"事件平均响应时长"的数据
-    # def get_ave_response_data(self):
+    # No.1:获取"事件平均响应时长"的数据
+    def get_ave_response_data(self):
+        temp_dict = self.data.get_name_dict()
+        name_dict = {}
+        # 仅保存需要考核的员工
+        for name in self.examiner_list:
+            try:
+                name_dict[name] = temp_dict[name]
+            except KeyError:
+                pass
+        for name in name_dict.keys():
+            total_num = name_dict[name]  # 事件总数
+            sum_res_h = round(self.data.get_total_response(name) / 3600, 4)  # 总响应时间(h)
+            ave_res_h = round(sum_res_h / total_num, 2)
+            score = self.cal_score_ave_response(ave_res_h)
+            name_dict[name] = [total_num, sum_res_h, ave_res_h, score]
+        return name_dict
+
+    # No.1:获取"事件平均响应时长"的文档
+    def get_ave_response_xls(self, name_dict):
+        ws = self.final_wb.add_sheet("事件平均响应时长")
+        # 设置加粗字体
+        style = XFStyle()
+        font = Font()
+        font.bold = True
+        style.font = font
+        ws.write(0, 0, "员工姓名", style=style)
+        ws.write(0, 1, "事件完成数", style=style)
+        ws.write(0, 2, "事件总响应时间(h)", style=style)
+        ws.write(0, 3, "事件平均响应时间(h)", style=style)
+        ws.write(0, 4, "该项得分", style=style)
+        x = 1
+        y = 0
+        for name in name_dict.keys():
+            ws.write(x, y, name, style=style)
+            y = y + 1
+            for item in name_dict[name]:
+                ws.write(x, y, item)
+                y = y + 1
+            x = x + 1
+            y = 0
+
+    # No.2:获取"事件超时解决率"的数据
+    def get_over_time_data(self):
+        temp_dict = self.data.get_name_dict()
+        name_dict = {}
+        # 仅保存需要考核的员工
+        for name in self.examiner_list:
+            try:
+                name_dict[name] = temp_dict[name]
+            except KeyError:
+                pass
+        for name in name_dict.keys():
+            total_num = name_dict[name]  # 事件总数
+            cur_num = total_num - self.data.get_num_solved_ontime(name)  # 超时解决事件数
+            rate = round(cur_num / total_num, 4)
+            score = self.cal_score_overtime(rate)
+            name_dict[name] = [total_num, cur_num, rate * 100, score]
+        return name_dict
+
+    # No.2:获取"事件超时解决率"的文档
+    def get_over_time_xls(self, name_dict):
+        ws = self.final_wb.add_sheet("超时解决率")
+        # 设置加粗字体
+        style = XFStyle()
+        font = Font()
+        font.bold = True
+        style.font = font
+        ws.write(0, 0, "员工姓名", style=style)
+        ws.write(0, 1, "事件完成数", style=style)
+        ws.write(0, 2, "事件超时解决数", style=style)
+        ws.write(0, 3, "事件超时解决率(%)", style=style)
+        ws.write(0, 4, "该项得分", style=style)
+        x = 1
+        y = 0
+        for name in name_dict.keys():
+            ws.write(x, y, name, style=style)
+            y = y + 1
+            for item in name_dict[name]:
+                ws.write(x, y, item)
+                y = y + 1
+            x = x + 1
+            y = 0
+
+    # No.3:获取"事件按时解决率"的数据
+    def get_on_time_data(self):
+        temp_dict = self.data.get_name_dict()
+        name_dict = {}
+        # 仅保存需要考核的员工
+        for name in self.examiner_list:
+            try:
+                name_dict[name] = temp_dict[name]
+            except KeyError:
+                pass
+        for name in name_dict.keys():
+            total_num = name_dict[name]  # 事件总数
+            cur_num = self.data.get_num_solved_ontime(name)  # 按时解决事件数
+            rate = round(cur_num / total_num, 4)
+            score = self.cal_score_on_time(rate)
+            name_dict[name] = [total_num, cur_num, rate * 100, score]
+        return name_dict
+
+    # No.3:获取"事件按时解决率"的文档
+    def get_on_time_xls(self, name_dict):
+        ws = self.final_wb.add_sheet("按时解决率")
+        # 设置加粗字体
+        style = XFStyle()
+        font = Font()
+        font.bold = True
+        style.font = font
+        ws.write(0, 0, "员工姓名", style=style)
+        ws.write(0, 1, "事件完成数", style=style)
+        ws.write(0, 2, "事件按时解决数", style=style)
+        ws.write(0, 3, "事件按时解决率(%)", style=style)
+        ws.write(0, 4, "该项得分", style=style)
+        x = 1
+        y = 0
+        for name in name_dict.keys():
+            ws.write(x, y, name, style=style)
+            y = y + 1
+            for item in name_dict[name]:
+                ws.write(x, y, item)
+                y = y + 1
+            x = x + 1
+            y = 0
 
     # No.4:获取"事件成功解决率"的数据
     def get_rate_all_solved_data(self):
@@ -243,14 +414,11 @@ class MyGUI:
             rate = round(cur_num / total_num, 4)
             score = self.cal_score_all_solved(rate)
             name_dict[name] = [total_num, cur_num, rate * 100, score]
-        # 输出结果
-        for name in name_dict.keys():
-            print(name + str(name_dict[name]))
         return name_dict
 
     # No.4:获取"事件成功解决率"文档
     def get_rate_all_solved_xls(self, name_dict):
-        ws = self.final_wb.add_sheet("员工根据解决率")
+        ws = self.final_wb.add_sheet("根本解决率")
         # 设置加粗字体
         style = XFStyle()
         font = Font()
@@ -330,6 +498,90 @@ class MyGUI:
             self.write_log("导出图表成功，文件保存至：" + filename)
         plt.show()
 
+    # No.5:获取"客户平均满意度"数据
+    def get_rate_ave_satisfied_data(self):
+        temp_dict = self.data.get_name_dict()
+        name_dict = {}
+        # 仅保存需要考核的员工
+        for name in self.examiner_list:
+            try:
+                name_dict[name] = temp_dict[name]
+            except KeyError:
+                pass
+        for name in name_dict.keys():
+            total_num = name_dict[name]  # 事件总数
+            s_sum = total_num
+            rate = 1
+            score = 100
+            name_dict[name] = [total_num, s_sum, rate * 100, score]
+        return name_dict
+
+    # No.5:获取"客户平均满意度"文档
+    def get_rate_ave_satisfied_xls(self, name_dict):
+        ws = self.final_wb.add_sheet("客户平均满意度")
+        # 设置加粗字体
+        style = XFStyle()
+        font = Font()
+        font.bold = True
+        style.font = font
+        ws.write(0, 0, "员工姓名", style=style)
+        ws.write(0, 1, "事件完成数", style=style)
+        ws.write(0, 2, "客户满意数", style=style)
+        ws.write(0, 3, "事件满意率(%)", style=style)
+        ws.write(0, 4, "该项得分", style=style)
+        x = 1
+        y = 0
+        for name in name_dict.keys():
+            ws.write(x, y, name, style=style)
+            y = y + 1
+            for item in name_dict[name]:
+                ws.write(x, y, item)
+                y = y + 1
+            x = x + 1
+            y = 0
+
+    # No.6:获取"事件平均解决时长"数据
+    def get_ave_solved_data(self):
+        temp_dict = self.data.get_name_dict()
+        name_dict = {}
+        # 仅保存需要考核的员工
+        for name in self.examiner_list:
+            try:
+                name_dict[name] = temp_dict[name]
+            except KeyError:
+                pass
+        for name in name_dict.keys():
+            total_num = name_dict[name]  # 事件总数
+            solved_time = self.data.get_total_solved_time(name)
+            ave_solved_time = solved_time / total_num
+            score = self.cal_score_ave_solved(ave_solved_time)
+            name_dict[name] = [total_num, solved_time, ave_solved_time, score]
+        return name_dict
+
+    # No.6:获取"事件平均解决时长"文档
+    def get_ave_solved_xls(self, name_dict):
+        ws = self.final_wb.add_sheet("事件平均解决时长")
+        # 设置加粗字体
+        style = XFStyle()
+        font = Font()
+        font.bold = True
+        style.font = font
+        ws.write(0, 0, "员工姓名", style=style)
+        ws.write(0, 1, "事件完成数", style=style)
+        ws.write(0, 2, "事件解决总时长(h)", style=style)
+        ws.write(0, 3, "事件平均解决时长(h)", style=style)
+        ws.write(0, 4, "该项得分", style=style)
+        x = 1
+        y = 0
+        for name in name_dict.keys():
+            ws.write(x, y, name, style=style)
+            y = y + 1
+            for item in name_dict[name]:
+                ws.write(x, y, item)
+                y = y + 1
+            x = x + 1
+            y = 0
+
     # 添加日志
     def write_log(self, msg):  # 日志动态打印
         current_time = self.get_current_time()
@@ -403,7 +655,7 @@ class MyGUI:
         elif rate >= 0.7:
             return 70
         else:
-            return 10 * int(rate / 0.1)
+            return 60
 
     # 计算用户平均满意度的得分
     @staticmethod
@@ -417,11 +669,11 @@ class MyGUI:
         elif level >= 70:
             return 70
         else:
-            return 10 * int(level / 10)
+            return 60
 
-    # 计算工作能力得分
+    # 计算事件平均解决时长的得分
     @staticmethod
-    def cal_score_work_ability(hour):
+    def cal_score_ave_solved(hour):
         if hour <= 1:
             return 100
         elif hour <= 4:
@@ -538,7 +790,8 @@ class ExaminerDialog:
         self.rootWindow.destroy()
 
     # 模糊搜索
-    def fuzzyfinder(self, user_input, collection):
+    @staticmethod
+    def fuzzyfinder(user_input, collection):
         suggestions = []
         pattern = '.*'.join(user_input)  # Converts 'djm' to 'd.*j.*m'
         regex = re.compile(pattern)  # Compiles a regex.
@@ -687,7 +940,7 @@ class InstructionDialog:
                           "名单会从搜索特定名单恢复为全部名单；\n" \
                           "3.5--完成选择后点击确认按钮返回主界面，并完成考核名单的修改。\n\n" \
                           "四、导出文件\n" \
-                          "4.1--在导出文件弹窗中"
+                          "4.1--在导出文件弹窗中balabala"
         self.quest_text = "常见问题说明\n"
         self.content_text = scrolledtext.ScrolledText(self.rootWindow, wrap=WORD)
         self.box_scrollbar_y = Scrollbar(self.rootWindow)
@@ -714,6 +967,9 @@ class ExcelMaster:
         self.table = None  # 保存当前正在处理的表格
         # 初始化表格
         self.set_table(0)
+        # 获取表格总行数
+        self.nrow = self.table.nrows
+        print(self.nrow)
 
     # index:第index个sheet,入参需要检查
     def set_table(self, index=0):
@@ -734,17 +990,75 @@ class ExcelMaster:
         name_dict = Counter(self.table.col_values(i, start_rowx=1, end_rowx=None))
         return name_dict
 
+    # 返回员工的响应总时长
+    def get_total_response(self, name):
+        print("正在查询" + name + "的响应总时长")
+        m = self.col_index('处理人')
+        p = self.col_index('完成时间')
+        q = self.col_index('派单时间')
+        name_list = list(self.table.col_values(m, start_rowx=1, end_rowx=None))
+        finish_list = []
+        send_list = []
+        for i in range(1, self.nrow):
+            cell1 = self.table.cell_value(i, p)
+            if cell1 != "":
+                finish_list.append(str(datetime(*xldate_as_tuple(cell1, 0)).strftime('%Y/%m/%d %H:%M:%S')))
+            else:
+                finish_list.append(" ")
+            cell2 = self.table.cell_value(i, q)
+            if cell2 != "":
+                send_list.append(str(datetime(*xldate_as_tuple(cell2, 0)).strftime('%Y/%m/%d %H:%M:%S')))
+            else:
+                send_list.append(" ")
+        print(finish_list)
+        print(send_list)
+        total_sec = 0
+        for i in range(len(name_list)):
+            if name_list[i] == name:
+                if finish_list[i] != " " and send_list[i] != " ":
+                    total_sec += self.minus_time_in_str(send_list[i], finish_list[i])
+        return total_sec
+
+    # 返回员工的按时解决事件数
+    def get_num_solved_ontime(self, name):
+        print("正在查询" + name + "的按时解决事件总数")
+        m = self.col_index('处理人')
+        p = self.col_index('销单时间')
+        q = self.col_index('完成时间')
+        name_list = list(self.table.col_values(m, start_rowx=1, end_rowx=None))
+        print(name_list)
+        cancel_list = []
+        finish_list = []
+        for i in range(1, self.nrow):
+            cell1 = self.table.cell_value(i, p)
+            if cell1 != "":
+                cancel_list.append(str(datetime(*xldate_as_tuple(cell1, 0)).strftime('%Y/%m/%d %H:%M:%S')))
+            else:
+                cancel_list.append(" ")
+            cell2 = self.table.cell_value(i, q)
+            if cell2 != "":
+                finish_list.append(str(datetime(*xldate_as_tuple(cell2, 0)).strftime('%Y/%m/%d %H:%M:%S')))
+            else:
+                finish_list.append(" ")
+        solved_limited_list = self.get_solved_limited_list()
+        print(solved_limited_list)
+        on_time_num = 0
+        for i in range(len(name_list)):
+            if name_list[i] == name:
+                if cancel_list[i] != " " and finish_list[i] != " ":
+                    if self.minus_time_in_str(finish_list[i], cancel_list[i]) <= 3600 * solved_limited_list[i]:
+                        on_time_num += 1
+                else:
+                    on_time_num += 1
+        return on_time_num
+
     # 返回员工“成功解决”的事件总数
     def get_num_all_solved(self, name):
-        print("正在查询: " + name)
+        print("正在查询: " + name + "的成功解决事件总数")
         m = self.col_index('处理人')
         n = self.col_index('结束代码')
         name_list = list(self.table.col_values(m, start_rowx=1, end_rowx=None))
         code_list = list(self.table.col_values(n, start_rowx=1, end_rowx=None))
-        print(name_list)
-        print(code_list)
-        print("length(name_list): " + str(len(name_list)))
-        print("length(code_list): " + str(len(code_list)))
         # 遍历行
         solved_num = 0
         for i in range(len(name_list)):
@@ -753,21 +1067,47 @@ class ExcelMaster:
         print("solved_num: " + str(solved_num))
         return solved_num
 
-    # 计算某位员工的“事件平均相应时长”
-    def ave_response_time(self):
-        result = dict()
-        name_list = self.get_name_list()
-        name_dict = Counter(name_list)
-        for name in name_dict.keys():
-            count = name_dict.get(name)
+    # 返回员工“事件解决”的总时长（处理时间(小时)总和）
+    def get_total_solved_time(self, name):
+        print("正在查询：" + name + "的事件总解决时长")
+        m = self.col_index('处理人')
+        n = self.col_index('处理时间(小时)')
+        name_list = list(self.table.col_values(m, start_rowx=1, end_rowx=None))
+        time_list = list(self.table.col_values(n, start_rowx=1, end_rowx=None))
+        total_time = 0
+        for i in range(len(name_list)):
+            if name_list[i] == name and time_list[i] != "":
+                total_time += float(time_list[i])
+        return total_time
+
+    # 返回事件的紧急程度列表
+    def get_solved_limited_list(self):
+        solved_limited_list = []
+        n = self.col_index('事件优先级')
+        for i in range(1, self.nrow):
+            value = self.table.cell_value(i, n)
+            if value == "低":
+                solved_limited_list.append(72)
+            elif value == "中":
+                solved_limited_list.append(48)
+            elif value == "高":
+                solved_limited_list.append(8)
+            elif value == "紧急":
+                solved_limited_list.append(4)
+            else:
+                solved_limited_list.append(72)
+        return solved_limited_list
 
     # 计算两个字符串时间('%Y/%m/%d %H:%M')的时间差: str2 - str1
     # 返回时间间隔, 单位: s
     @staticmethod
     def minus_time_in_str(str1, str2):
-        time1 = strptime(str1, '%Y/%m/%d %H:%M')
-        time2 = strptime(str2, '%Y/%m/%d %H:%M')
-        return mktime(time2) - mktime(time1)
+        if str1 != " " and str2 != " ":
+            time1 = strptime(str1, '%Y/%m/%d %H:%M:%S')
+            time2 = strptime(str2, '%Y/%m/%d %H:%M:%S')
+            return mktime(time2) - mktime(time1)
+        else:
+            return 0
 
     # 返回列名返回列索引
     def col_index(self, col_name):
