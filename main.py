@@ -278,9 +278,12 @@ class MyGUI:
                 name_dict_list.append(self.get_rate_all_solved_data())
                 name_dict_list.append(self.get_rate_ave_satisfied_data())
                 name_dict_list.append(self.get_ave_solved_data())
-                png_element = ["事件完成数", "事件超时解决数", "事件超时解决率(%)", "该项得分", "处理人", "数量（得分）", "员工超时解决率统计图表", "员工超时解决率统计图表"]
-                self.get_total_png_by_data(name_list, name_dict_list, png_element)
+                self.get_total_png_by_data(name_list, name_dict_list)
             elif res[1] == option2:
+                name_dict = self.get_ave_response_data()
+                png_element = ["事件完成数", "事件响应总时长(h)", "事件平均响应时长(h)", "该项得分", "处理人", "数量（时长/得分）", "员工平均响应时长统计图表",
+                               "员工平均响应时长统计图表"]
+                self.get_png_by_data(name_dict, png_element)
                 pass
             elif res[1] == option3:
                 name_dict = self.get_on_time_data()
@@ -299,6 +302,10 @@ class MyGUI:
                 png_element = ["事件完成数", "客户满意数", "事件满意率(%)", "该项得分", "处理人", "数量（得分）", "客户平均满意率统计图表", "员工成功解决率统计图表"]
                 self.get_png_by_data(name_dict, png_element)
             elif res[1] == option7:
+                name_dict = self.get_ave_solved_data()
+                png_element = ["事件完成数", "事件解决总时长(h)", "事件平均解决时长(h)", "该项得分", "处理人", "数量（时长/得分）", "员工平均解决时长统计图表",
+                               "员工平均解决时长统计图表"]
+                self.get_png_by_data(name_dict, png_element)
                 pass
 
     # No.1:获取"事件平均响应时长"的数据
@@ -471,24 +478,22 @@ class MyGUI:
 
     # 根据数据导出全部图片
     def get_total_png_by_data(self, name_list, name_dict_list):
-        # TODO!!!!!!!!!!!!!!!
-        num_list1, num_list2, num_list3, num_list4, num_list5, num_list6 = [], [], [], [], [], []
-        label_list = ["事件平均解决时长", "事件响应超时率", "事件按时解决率", "事件成功解决率", "客户平均满意度", "事件平均解决时长"]
+        num_list_list = []
         for name in name_list:
-            num_list1.append(name_dict_list[0][name][3])
-            num_list2.append(name_dict_list[1][name][3])
-            num_list3.append(name_dict_list[2][name][3])
-            num_list4.append(name_dict_list[3][name][3])
-            num_list5.append(name_dict_list[4][name][3])
-            num_list6.append(name_dict_list[5][name][3])
-        x = range(len(num_list1))
+            num_list = []
+            for cur_dict in name_dict_list:
+                num_list.append(cur_dict[name][3])
+            num_list_list.append(num_list)
+
+        label_list = ["事件平均解决时长", "事件响应超时率", "事件按时解决率", "事件成功解决率", "客户平均满意度", "事件平均解决时长"]
+        x = range(len(label_list))
         # 设置画布大小
         plt.figure(figsize=(len(label_list) + 7, 5))
         rect_list = []
         rect_width = 1 / (len(name_list) + 1)
         for m in range(len(name_list)):
-            rects = plt.bar(x=[i + rect_width * (m + 1) for i in x], height=num_list1, width=rect_width, color='#4F94CD',
-                            edgecolor='k', label=name_list[m])
+            rects = plt.bar(x=[i + rect_width * (m + 1) for i in x], height=num_list_list[m], width=rect_width,
+                            color='#4F94CD', edgecolor='k', label=name_list[m])
             rect_list.append(rects)
         # 取值范围
         plt.ylim(0, 105)
@@ -528,7 +533,7 @@ class MyGUI:
             num_list2.append(name_dict[name][1])
             num_list3.append(name_dict[name][2])
             num_list4.append(name_dict[name][3])
-        x = range(len(num_list1))
+        x = range(len(label_list))
         # 设置画布大小
         plt.figure(figsize=(len(label_list) + 7, 5))
         rects1 = plt.bar(x=[i + 0.2 for i in x], height=num_list1, width=0.2, color='#4F94CD', edgecolor='k',
@@ -630,8 +635,8 @@ class MyGUI:
                 pass
         for name in name_dict.keys():
             total_num = name_dict[name]  # 事件总数
-            solved_time = self.data.get_total_solved_time(name)
-            ave_solved_time = solved_time / total_num
+            solved_time = round(self.data.get_total_solved_time(name), 3)
+            ave_solved_time = round(solved_time / total_num, 3)
             score = self.cal_score_ave_solved(ave_solved_time)
             name_dict[name] = [total_num, solved_time, ave_solved_time, score]
         return name_dict
