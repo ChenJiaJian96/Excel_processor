@@ -30,6 +30,7 @@ class MyGUI:
     def __init__(self):
         self.file_name = None
         self.examiner_list = []  # 考核人员名单
+        self.history_list = []  # 历史考核人员名单
         self.data = None  # master实例
         self.init_window = Tk()  # 父布局
         self.final_wb = None  # 最终导出的文件实例
@@ -133,6 +134,7 @@ class MyGUI:
             flag = 1
         if flag == 0:
             self.write_log("该文件完整，开始选择考勤名单。")
+            self.history_list = []
             self.setup_staff_list()
         else:
             self.write_log("文件不完整，建议检查文件完整性后重启系统。")
@@ -172,6 +174,8 @@ class MyGUI:
                 self.write_log("当前选择考核的员工为：" + str(self.examiner_list))
         else:
             self.write_log("当前选择考核的员工为：" + str(res))
+            if str(res) not in self.history_list:
+                self.history_list.append(res)
             self.examiner_list = res
         # 若员工名单为空，不允许导出
         if len(self.examiner_list) == 0:
@@ -180,7 +184,7 @@ class MyGUI:
     # 开始选择员工列表
     def open_staff_list(self):
         name_list = self.data.get_name_list()
-        input_dialog = ExaminerDialog(name_list)
+        input_dialog = ExaminerDialog(name_list, self.history_list)
         self.set_button_state(0)
         self.init_window.wait_window(input_dialog.rootWindow)  # 这一句很重要！！！
         self.set_button_state(1)
@@ -688,24 +692,29 @@ class MyGUI:
 
 # 选择考核人员弹窗
 class ExaminerDialog:
-    # TODO:添加历史选择
-    def __init__(self, name_list):
+    def __init__(self, name_list, history_list):
         self.name_list = name_list  # 传过来的名单
+        self.history_list = history_list  # 传过来的历史选择名单
         self.result_list = []  # 需要发出去的名单
         self.rootWindow = Toplevel()
         self.rootWindow.title('设置考勤名单')
-        self.rootWindow.geometry("600x300+250+250")
+        self.rootWindow.geometry("600x380+250+250")
         self.rootWindow.iconbitmap(ico_path)
         self.search_text = Entry(self.rootWindow)
         self.name_list_label = Label(self.rootWindow, text="表格名单(点击多选）")
         self.selected_list_label = Label(self.rootWindow, text="选中名单列表")
+        self.history_label = Label(self.rootWindow, text="历史选择")
+        self.history_var = StringVar()
+        self.history_cb = ttk.Combobox(self.rootWindow, textvariable=self.history_var)
+        self.history_cb['values'] = self.history_list
+        self.history_cb['state'] = "readonly"
 
         self.search_button = Button(self.rootWindow, text="搜索", command=self.search)
-        self.add_button = Button(self.rootWindow, text="添加 >>", command=self.add_name)
+        self.add_button = Button(self.rootWindow, text="添加 >>", command=self.add_name_from_box)
         self.del_button = Button(self.rootWindow, text="删除 <<", command=self.del_name)
         self.all_del_button = Button(self.rootWindow, text="全部删除", command=self.del_all)
         self.confirm_button = Button(self.rootWindow, text="确认", command=self.ok)
-
+        self.history_add_button = Button(self.rootWindow, text="↑↑", command=self.add_name_from_cb)
         # 滚动条
         self.box_scrollbar_y = Scrollbar(self.rootWindow)
 
@@ -715,21 +724,25 @@ class ExaminerDialog:
         self.init_ui()
 
     def init_ui(self):
-        self.search_text.place(relx=0.05, rely=0.05, relwidth=0.6, relheight=0.1)
-        self.search_button.place(relx=0.7, rely=0.05, relwidth=0.25, relheight=0.1)
-        self.name_list_label.place(relx=0.05, rely=0.15, relwidth=0.3, relheight=0.15)
-        self.selected_list_label.place(relx=0.65, rely=0.15, relwidth=0.3, relheight=0.15)
-        self.name_list_box.place(relx=0.05, rely=0.3, relwidth=0.3, relheight=0.65)
-        self.selected_list_box.place(relx=0.65, rely=0.3, relwidth=0.3, relheight=0.65)
-        self.add_button.place(relx=0.4, rely=0.3, relwidth=0.2, relheight=0.12)
-        self.del_button.place(relx=0.4, rely=0.47, relwidth=0.2, relheight=0.12)
-        self.all_del_button.place(relx=0.4, rely=0.64, relwidth=0.2, relheight=0.12)
-        self.confirm_button.place(relx=0.4, rely=0.81, relwidth=0.2, relheight=0.12)
+        self.search_text.place(relx=0.05, rely=0.05, relwidth=0.6, relheight=0.08)
+        self.search_button.place(relx=0.7, rely=0.05, relwidth=0.25, relheight=0.08)
+        self.name_list_label.place(relx=0.05, rely=0.14, relwidth=0.3, relheight=0.1)
+        self.selected_list_label.place(relx=0.65, rely=0.14, relwidth=0.3, relheight=0.1)
+        self.name_list_box.place(relx=0.05, rely=0.24, relwidth=0.3, relheight=0.65)
+        self.selected_list_box.place(relx=0.65, rely=0.24, relwidth=0.3, relheight=0.65)
+        self.add_button.place(relx=0.4, rely=0.24, relwidth=0.2, relheight=0.12)
+        self.del_button.place(relx=0.4, rely=0.41, relwidth=0.2, relheight=0.12)
+        self.all_del_button.place(relx=0.4, rely=0.58, relwidth=0.2, relheight=0.12)
+        self.confirm_button.place(relx=0.4, rely=0.75, relwidth=0.2, relheight=0.12)
         self.box_scrollbar_y.config(command=self.name_list_box.yview)
         self.name_list_box.config(yscrollcommand=self.box_scrollbar_y.set)
-        self.box_scrollbar_y.place(relx=0.35, rely=0.3, relheight=0.65)
+        self.box_scrollbar_y.place(relx=0.35, rely=0.24, relheight=0.65)
+        self.history_label.place(relx=0.05, rely=0.9, relwidth=0.10, relheight=0.08)
+        self.history_cb.place(relx=0.2, rely=0.9, relwidth=0.6, relheight=0.08)
+        self.history_add_button.place(relx=0.85, rely=0.9, relwidth=0.1, relheight=0.08)
+        if len(self.history_list) == 0:
+            self.history_add_button.config(state=DISABLED)
         # 对名单进行排序，优化用户体验
-        # TODO：排序规则存在问题
         self.refresh_name_list()
 
     def refresh_name_list(self):
@@ -755,11 +768,9 @@ class ExaminerDialog:
         else:
             self.refresh_name_list()
 
-    def add_name(self):
-        selected_list = self.name_list_box.curselection()
-        print("You have added: " + str(selected_list))
+    def add_name(self, name_list):
         temp_added_list = []
-        for pos in selected_list:
+        for pos in name_list:
             name = self.name_list_box.get(pos)
             if name in self.result_list:
                 temp_added_list.append(name)
@@ -781,6 +792,23 @@ class ExaminerDialog:
     def del_all(self):
         self.selected_list_box.delete(0, END)
         self.result_list.clear()
+
+    def add_name_from_box(self):
+        selected_list = self.name_list_box.curselection()
+        print(selected_list)
+        self.add_name(selected_list)
+
+    def add_name_from_cb(self):
+        self.del_all()
+        temp_name_list = self.history_list[self.history_cb.current()]
+        print(self.name_list)
+        print(temp_name_list)
+        selected_list = []
+        for name in temp_name_list:
+            print(name)
+            pos = self.name_list.index(name)
+            selected_list.append(pos)
+        self.add_name(selected_list)
 
     def ok(self):
         self.rootWindow.destroy()
@@ -1213,5 +1241,6 @@ class SortEngine:
                 j -= 1
             nline[j] = tmp
         return nline
+
 
 MyGUI()  # 启动窗口
