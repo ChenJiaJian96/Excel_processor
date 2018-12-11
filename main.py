@@ -88,6 +88,9 @@ class MyGUI:
         self.bottom_label.place(relx=0.4, rely=0.95, relwidth=0.2, relheight=0.05)
 
         self.set_button_state(0)
+        _time = localtime(time())
+        greetings = self.get_greetings(_time.tm_hour)
+        self.write_log(greetings + ",请点击右侧“打开文件”按钮开始本次考核吧-->")
 
     # 打开文件
     def open_file(self):
@@ -670,7 +673,7 @@ class MyGUI:
         current_time = self.get_current_time()
         log_msg = str(current_time) + " " + str(msg) + "\n"  # 换行
         self.log_data_text.insert(END, log_msg)
-        divider_msg = "---------------------------------------" + "\n"
+        divider_msg = "-----------------------------------------" + "\n"
         self.log_data_text.insert(END, divider_msg)
         # 滚动至底部
         self.log_data_text.yview_moveto(100)
@@ -683,6 +686,17 @@ class MyGUI:
     def get_current_time():
         current_time = strftime('%Y-%m-%d %H:%M:%S', localtime(time()))
         return current_time
+
+    @staticmethod
+    def get_greetings(hour):
+        if 6 <= hour <= 11:
+            return "早上好"
+        elif 11 <= hour <= 13:
+            return "中午好"
+        elif 13 <= hour <= 18:
+            return "下午好"
+        else:
+            return "晚上好"
 
     # 计算事件平均响应时长的得分
     @staticmethod
