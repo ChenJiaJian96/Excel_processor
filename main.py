@@ -681,7 +681,7 @@ class MyGUI:
         current_time = self.get_current_time()
         log_msg = str(current_time) + " " + str(msg) + "\n"  # 换行
         self.log_data_text.insert(END, log_msg)
-        divider_msg = "-----------------------------------------" + "\n"
+        divider_msg = "-------------------------------------------" + "\n"
         self.log_data_text.insert(END, divider_msg)
         # 滚动至底部
         self.log_data_text.yview_moveto(100)
@@ -937,12 +937,13 @@ class ExportDialog:
         self.value_list = (option1, option2, option3, option4, option5, option6, option7)
         self.rootWindow = Toplevel()
         self.rootWindow.title('导出设置')
-        self.rootWindow.geometry("300x180+250+250")
+        self.rootWindow.geometry("350x250+250+250")
         self.rootWindow.iconbitmap(ico_path)
         self.result_list = []
 
         self.format_label = Label(self.rootWindow, text="导出格式")
         self.text_label = Label(self.rootWindow, text="导出内容")
+        self.color_label = Label(self.rootWindow, text="选择配色方案")
         self.check_var1 = IntVar()
         self.check_var2 = IntVar()
         self.xls_cb = Checkbutton(self.rootWindow, text="导出文档", variable=self.check_var1, onvalue=1, offvalue=0,
@@ -955,6 +956,11 @@ class ExportDialog:
         self.text_cb['values'] = self.value_list
         self.text_cb['state'] = "readonly"
         self.text_cb.current(0)
+        self.combo_var1 = StringVar()
+        self.color_cb = ttk.Combobox(self.rootWindow, textvariable=self.combo_var1)
+        self.color_cb['values'] = color_scheme_name
+        self.color_cb['state'] = "readonly"
+        self.color_cb.current(0)
         self.confirm_button = Button(self.rootWindow, text="确认", command=self.ok)
         self.cancel_button = Button(self.rootWindow, text="取消", command=self.cancel)
         self.init_ui()
@@ -962,17 +968,21 @@ class ExportDialog:
     def call_xls(self):
         self.xls_cb.select()
         self.img_cb.deselect()
+        self.color_cb.config(state=DISABLED)
 
     def call_img(self):
         self.img_cb.select()
         self.xls_cb.deselect()
+        self.color_cb.config(state=ACTIVE)
 
     def init_ui(self):
-        self.format_label.place(relx=0.05, rely=0.05, relwidth=0.3, relheight=0.15)
-        self.xls_cb.place(relx=0.05, rely=0.25, relwidth=0.3, relheight=0.1)
-        self.img_cb.place(relx=0.6, rely=0.25, relwidth=0.3, relheight=0.1)
-        self.text_label.place(relx=0.05, rely=0.4, relwidth=0.3, relheight=0.15)
-        self.text_cb.place(relx=0.1, rely=0.60, relwidth=0.8, relheight=0.15)
+        self.format_label.place(relx=0.05, rely=0.05, relwidth=0.2, relheight=0.1)
+        self.xls_cb.place(relx=0.05, rely=0.20, relwidth=0.3, relheight=0.05)
+        self.img_cb.place(relx=0.6, rely=0.20, relwidth=0.3, relheight=0.05)
+        self.text_label.place(relx=0.05, rely=0.3, relwidth=0.2, relheight=0.1)
+        self.text_cb.place(relx=0.1, rely=0.43, relwidth=0.8, relheight=0.1)
+        self.color_label.place(relx=0.05, rely=0.55, relwidth=0.3, relheight=0.1)
+        self.color_cb.place(relx=0.1, rely=0.68, relwidth=0.5, relheight=0.1)
         self.confirm_button.place(relx=0.6, rely=0.82, relwidth=0.15, relheight=0.15)
         self.cancel_button.place(relx=0.8, rely=0.82, relwidth=0.15, relheight=0.15)
 
