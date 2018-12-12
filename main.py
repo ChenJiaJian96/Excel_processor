@@ -8,6 +8,7 @@ from datetime import datetime
 from collections import Counter
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
+from decimal import Decimal
 
 # 打包exe文件
 # pyinstaller -F -w main.py
@@ -22,6 +23,9 @@ option6 = "仅导出指定员工的“平均满意度”情况"
 option7 = "仅导出指定员工的“平均解决时长”情况"
 global ico_path
 ico_path = ".\CSPGCL.ico"
+global color_scheme
+color_scheme = [['#5B6C83', '#D7CCB8', '#38526E', '#BFBFBF'], ['#948A54', '#596166', "#A9BD8B", "#1C7B64"],
+                ['#1A7F9C', '#2DCFFF', '#104D60', "#229BBF"]]
 rcParams['font.sans-serif'] = ['SimHei']
 
 
@@ -286,29 +290,29 @@ class MyGUI:
                 name_dict = self.get_ave_response_data()
                 png_element = ["事件完成数", "事件响应总时长(h)", "事件平均响应时长(h)", "该项得分", "处理人", "数量（时长/得分）", "员工平均响应时长统计图表",
                                "员工平均响应时长统计图表"]
-                self.get_png_by_data(name_dict, png_element)
+                self.get_png_by_data(name_dict, png_element, color_scheme[1])
                 pass
             elif res[1] == option3:
                 name_dict = self.get_on_time_data()
                 png_element = ["事件完成数", "事件超时解决数", "事件超时解决率(%)", "该项得分", "处理人", "数量（得分）", "员工超时解决率统计图表", "员工超时解决率统计图表"]
-                self.get_png_by_data(name_dict, png_element)
+                self.get_png_by_data(name_dict, png_element, color_scheme[2])
             elif res[1] == option4:
                 name_dict = self.get_on_time_data()
                 png_element = ["事件完成数", "事件按时解决数", "事件按时解决率(%)", "该项得分", "处理人", "数量（得分）", "员工按时解决率统计图表", "员工超时解决率统计图表"]
-                self.get_png_by_data(name_dict, png_element)
+                self.get_png_by_data(name_dict, png_element, color_scheme[2])
             elif res[1] == option5:
                 name_dict = self.get_rate_all_solved_data()
                 png_element = ["事件完成数", "事件成功解决数", "事件成功解决率(%)", "该项得分", "处理人", "数量（得分）", "员工成功解决率统计图表", "员工成功解决率统计图表"]
-                self.get_png_by_data(name_dict, png_element)
+                self.get_png_by_data(name_dict, png_element, color_scheme[2])
             elif res[1] == option6:
                 name_dict = self.get_rate_ave_satisfied_data()
                 png_element = ["事件完成数", "客户满意数", "事件满意率(%)", "该项得分", "处理人", "数量（得分）", "客户平均满意率统计图表", "员工成功解决率统计图表"]
-                self.get_png_by_data(name_dict, png_element)
+                self.get_png_by_data(name_dict, png_element, color_scheme[2])
             elif res[1] == option7:
                 name_dict = self.get_ave_solved_data()
                 png_element = ["事件完成数", "事件解决总时长(h)", "事件平均解决时长(h)", "该项得分", "处理人", "数量（时长/得分）", "员工平均解决时长统计图表",
                                "员工平均解决时长统计图表"]
-                self.get_png_by_data(name_dict, png_element)
+                self.get_png_by_data(name_dict, png_element, color_scheme[0])
                 pass
 
     # No.1:获取"事件平均响应时长"的数据
@@ -323,8 +327,8 @@ class MyGUI:
                 pass
         for name in name_dict.keys():
             total_num = name_dict[name]  # 事件总数
-            sum_res_h = round(self.data.get_total_response(name) / 3600, 4)  # 总响应时间(h)
-            ave_res_h = round(sum_res_h / total_num, 2)
+            sum_res_h = Decimal(self.data.get_total_response(name) / 3600).quantize(Decimal('0.0000'))  # 总响应时间(h)
+            ave_res_h = Decimal(sum_res_h / total_num).quantize(Decimal('0.00'))
             score = self.cal_score_ave_response(ave_res_h)
             name_dict[name] = [total_num, sum_res_h, ave_res_h, score]
         return name_dict
@@ -366,7 +370,7 @@ class MyGUI:
         for name in name_dict.keys():
             total_num = name_dict[name]  # 事件总数
             cur_num = total_num - self.data.get_num_solved_ontime(name)  # 超时解决事件数
-            rate = round(cur_num / total_num, 4)
+            rate = Decimal(cur_num / total_num).quantize(Decimal('0.0000'))
             score = self.cal_score_overtime(rate)
             name_dict[name] = [total_num, cur_num, rate * 100, score]
         return name_dict
@@ -408,7 +412,7 @@ class MyGUI:
         for name in name_dict.keys():
             total_num = name_dict[name]  # 事件总数
             cur_num = self.data.get_num_solved_ontime(name)  # 按时解决事件数
-            rate = round(cur_num / total_num, 4)
+            rate = Decimal(cur_num / total_num).quantize(Decimal('0.0000'))
             score = self.cal_score_on_time(rate)
             name_dict[name] = [total_num, cur_num, rate * 100, score]
         return name_dict
@@ -450,7 +454,7 @@ class MyGUI:
         for name in name_dict.keys():
             total_num = name_dict[name]  # 事件总数
             cur_num = self.data.get_num_all_solved(name)  # 成功解决事件数
-            rate = round(cur_num / total_num, 4)
+            rate = Decimal(cur_num / total_num).quantize(Decimal('0.000'))
             score = self.cal_score_all_solved(rate)
             name_dict[name] = [total_num, cur_num, rate * 100, score]
         return name_dict
@@ -528,7 +532,7 @@ class MyGUI:
             self.write_log("导出图表成功，文件保存至：" + filename)
 
     # 根据数据导出个别图片
-    def get_png_by_data(self, name_dict, png_element):
+    def get_png_by_data(self, name_dict, png_element, color_scheme):
         label_list, num_list1, num_list2, num_list3, num_list4 = [], [], [], [], []
         for name in name_dict:
             label_list.append(name)
@@ -539,16 +543,16 @@ class MyGUI:
         x = range(len(label_list))
         # 设置画布大小
         plt.figure(figsize=(len(label_list) + 7, 5))
-        rects1 = plt.bar(x=[i + 0.2 for i in x], height=num_list1, width=0.2, color='#4F94CD', edgecolor='k',
+        rects1 = plt.bar(x=[i + 0.2 for i in x], height=num_list1, width=0.2, color=color_scheme[0], edgecolor='k',
                          label=png_element[0])
-        rects2 = plt.bar(x=[i + 0.4 for i in x], height=num_list2, width=0.2, color='#4F94CD', edgecolor='k',
+        rects2 = plt.bar(x=[i + 0.4 for i in x], height=num_list2, width=0.2, color=color_scheme[1], edgecolor='k',
                          label=png_element[1])
-        rects3 = plt.bar(x=[i + 0.6 for i in x], height=num_list3, width=0.2, color='#4F94CD', edgecolor='k',
+        rects3 = plt.bar(x=[i + 0.6 for i in x], height=num_list3, width=0.2, color=color_scheme[2], edgecolor='k',
                          label=png_element[2])
-        rects4 = plt.bar(x=[i + 0.8 for i in x], height=num_list4, width=0.2, color='#4F94CD', edgecolor='k',
+        rects4 = plt.bar(x=[i + 0.8 for i in x], height=num_list4, width=0.2, color=color_scheme[3], edgecolor='k',
                          label=png_element[3])
         # 取值范围
-        plt.ylim(0, max(max(num_list1) + 5, 105))
+        plt.ylim(0, max(max(num_list1), 100) * 1.2)
         plt.xlim(0, len(label_list))
         # 中点坐标，显示值
         plt.xticks([index + 0.5 for index in x], label_list)
@@ -570,19 +574,20 @@ class MyGUI:
             height = rect.get_height()
             plt.text(rect.get_x() + rect.get_width() / 2, height + 1, str(height), ha="center", va="bottom")
         plt.tight_layout()
-        initial_filename = png_element[7]
-        filename = filedialog.asksaveasfilename(title="保存文件",
-                                                filetype=[('图片文件', '*.png')],
-                                                defaultextension='.png',
-                                                initialfile=initial_filename)
-        try:
-            plt.savefig(filename)
-        except PermissionError:
-            self.write_log("权限出错，导出中断。")
-        except FileNotFoundError:
-            self.write_log("你点击了取消，导出中断。")
-        else:
-            self.write_log("导出图表成功，文件保存至：" + filename)
+        plt.show()
+        # initial_filename = png_element[7]
+        # filename = filedialog.asksaveasfilename(title="保存文件",
+        #                                         filetype=[('图片文件', '*.png')],
+        #                                         defaultextension='.png',
+        #                                         initialfile=initial_filename)
+        # try:
+        #     plt.savefig(filename)
+        # except PermissionError:
+        #     self.write_log("权限出错，导出中断。")
+        # except FileNotFoundError:
+        #     self.write_log("你点击了取消，导出中断。")
+        # else:
+        #     self.write_log("导出图表成功，文件保存至：" + filename)
 
     # No.5:获取"客户平均满意度"数据
     def get_rate_ave_satisfied_data(self):
@@ -638,8 +643,8 @@ class MyGUI:
                 pass
         for name in name_dict.keys():
             total_num = name_dict[name]  # 事件总数
-            solved_time = round(self.data.get_total_solved_time(name), 3)
-            ave_solved_time = round(solved_time / total_num, 3)
+            solved_time = Decimal(self.data.get_total_solved_time(name)).quantize(Decimal('0.000'))
+            ave_solved_time = Decimal(solved_time / total_num).quantize(Decimal('0.000'))
             score = self.cal_score_ave_solved(ave_solved_time)
             name_dict[name] = [total_num, solved_time, ave_solved_time, score]
         return name_dict
