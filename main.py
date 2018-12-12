@@ -24,10 +24,10 @@ option7 = "仅导出指定员工的“平均解决时长”情况"
 global ico_path
 ico_path = ".\CSPGCL.ico"
 global color_scheme
-color_scheme = [['#5B6C83', '#D7CCB8', '#38526E', '#BFBFBF'], ['#948A54', '#596166', '#A9BD8B', '#1C7B64'],
-                ['#1A7F9C', '#2DCFFF', '#104D60', '#229BBF'], ['#c6c6bc', '#e3ddbd', '#d3c2ba', '#869f82'],
+color_scheme = [['#1A7F9C', '#2DCFFF', '#104D60', '#229BBF'], ['#5B6C83', '#D7CCB8', '#38526E', '#BFBFBF'],
+                ['#948A54', '#596166', '#A9BD8B', '#1C7B64'], ['#c6c6bc', '#e3ddbd', '#d3c2ba', '#869f82'],
                 ['#e6a0c4', '#c6cdf7', '#d8a499', '#7294d4'], ['#5ec9db', '#fdc765', '#f27d51', '#6462cc']]
-color_scheme_name = ['达芬奇的左手', '路人甲的密码', '数据时代', '莫兰迪色图表', '马卡龙色图表', '孟菲斯风格图表']
+color_scheme_name = ['数据时代', '达芬奇的左手', '路人甲的密码', '莫兰迪色图表', '马卡龙色图表', '孟菲斯风格图表']
 big_color_scheme = []
 rcParams['font.sans-serif'] = ['SimHei']
 
@@ -279,6 +279,7 @@ class MyGUI:
                 self.write_log('导出成功。文件保存至：' + file_name)
         # 用户选择导出图片
         elif res[0] == 2:
+            color_index = res[2]
             if res[1] == option1:
                 name_dict_list = []
                 name_list = self.examiner_list
@@ -293,29 +294,29 @@ class MyGUI:
                 name_dict = self.get_ave_response_data()
                 png_element = ["事件完成数", "事件响应总时长(h)", "事件平均响应时长(h)", "该项得分", "处理人", "数量（时长/得分）", "员工平均响应时长统计图表",
                                "员工平均响应时长统计图表"]
-                self.get_png_by_data(name_dict, png_element, color_scheme[1])
+                self.get_png_by_data(name_dict, png_element, color_scheme[color_index])
                 pass
             elif res[1] == option3:
                 name_dict = self.get_on_time_data()
                 png_element = ["事件完成数", "事件超时解决数", "事件超时解决率(%)", "该项得分", "处理人", "数量（得分）", "员工超时解决率统计图表", "员工超时解决率统计图表"]
-                self.get_png_by_data(name_dict, png_element, color_scheme[2])
+                self.get_png_by_data(name_dict, png_element, color_scheme[color_index])
             elif res[1] == option4:
                 name_dict = self.get_on_time_data()
                 png_element = ["事件完成数", "事件按时解决数", "事件按时解决率(%)", "该项得分", "处理人", "数量（得分）", "员工按时解决率统计图表", "员工超时解决率统计图表"]
-                self.get_png_by_data(name_dict, png_element, color_scheme[2])
+                self.get_png_by_data(name_dict, png_element, color_scheme[color_index])
             elif res[1] == option5:
                 name_dict = self.get_rate_all_solved_data()
                 png_element = ["事件完成数", "事件成功解决数", "事件成功解决率(%)", "该项得分", "处理人", "数量（得分）", "员工成功解决率统计图表", "员工成功解决率统计图表"]
-                self.get_png_by_data(name_dict, png_element, color_scheme[2])
+                self.get_png_by_data(name_dict, png_element, color_scheme[color_index])
             elif res[1] == option6:
                 name_dict = self.get_rate_ave_satisfied_data()
                 png_element = ["事件完成数", "客户满意数", "事件满意率(%)", "该项得分", "处理人", "数量（得分）", "客户平均满意率统计图表", "员工成功解决率统计图表"]
-                self.get_png_by_data(name_dict, png_element, color_scheme[2])
+                self.get_png_by_data(name_dict, png_element, color_scheme[color_index])
             elif res[1] == option7:
                 name_dict = self.get_ave_solved_data()
                 png_element = ["事件完成数", "事件解决总时长(h)", "事件平均解决时长(h)", "该项得分", "处理人", "数量（时长/得分）", "员工平均解决时长统计图表",
                                "员工平均解决时长统计图表"]
-                self.get_png_by_data(name_dict, png_element, color_scheme[0])
+                self.get_png_by_data(name_dict, png_element, color_scheme[color_index])
                 pass
 
     # No.1:获取"事件平均响应时长"的数据
@@ -956,11 +957,19 @@ class ExportDialog:
         self.text_cb['values'] = self.value_list
         self.text_cb['state'] = "readonly"
         self.text_cb.current(0)
+        # 配色方案
         self.combo_var1 = StringVar()
         self.color_cb = ttk.Combobox(self.rootWindow, textvariable=self.combo_var1)
         self.color_cb['values'] = color_scheme_name
         self.color_cb['state'] = "readonly"
         self.color_cb.current(0)
+        self.color_cb.config(state=DISABLED)
+        self.c_frame1 = Frame(self.rootWindow)
+        self.c_frame2 = Frame(self.rootWindow)
+        self.c_frame3 = Frame(self.rootWindow)
+        self.c_frame4 = Frame(self.rootWindow)
+        self.color_cb.bind("<<ComboboxSelected>>", self.update_c_frame)
+        self.update_c_frame(-1)
         self.confirm_button = Button(self.rootWindow, text="确认", command=self.ok)
         self.cancel_button = Button(self.rootWindow, text="取消", command=self.cancel)
         self.init_ui()
@@ -969,11 +978,14 @@ class ExportDialog:
         self.xls_cb.select()
         self.img_cb.deselect()
         self.color_cb.config(state=DISABLED)
+        self.update_c_frame(-1)
 
     def call_img(self):
         self.img_cb.select()
         self.xls_cb.deselect()
         self.color_cb.config(state=ACTIVE)
+        self.color_cb['state'] = "readonly"
+        self.update_c_frame(0)
 
     def init_ui(self):
         self.format_label.place(relx=0.05, rely=0.05, relwidth=0.2, relheight=0.1)
@@ -981,13 +993,26 @@ class ExportDialog:
         self.img_cb.place(relx=0.6, rely=0.20, relwidth=0.3, relheight=0.05)
         self.text_label.place(relx=0.05, rely=0.3, relwidth=0.2, relheight=0.1)
         self.text_cb.place(relx=0.1, rely=0.43, relwidth=0.8, relheight=0.1)
-        self.color_label.place(relx=0.05, rely=0.55, relwidth=0.3, relheight=0.1)
-        self.color_cb.place(relx=0.1, rely=0.68, relwidth=0.5, relheight=0.1)
+        self.color_label.place(relx=0.03, rely=0.55, relwidth=0.3, relheight=0.1)
+        self.color_cb.place(relx=0.1, rely=0.68, relwidth=0.4, relheight=0.1)
+        self.c_frame1.place(relx=0.55, rely=0.68, relwidth=0.1, relheight=0.1)
+        self.c_frame2.place(relx=0.65, rely=0.68, relwidth=0.1, relheight=0.1)
+        self.c_frame3.place(relx=0.75, rely=0.68, relwidth=0.1, relheight=0.1)
+        self.c_frame4.place(relx=0.85, rely=0.68, relwidth=0.1, relheight=0.1)
         self.confirm_button.place(relx=0.6, rely=0.82, relwidth=0.15, relheight=0.15)
         self.cancel_button.place(relx=0.8, rely=0.82, relwidth=0.15, relheight=0.15)
 
+    def update_c_frame(self, i):
+        if i == -1:
+            new_color = ['#DDDDDD', '#DDDDDD', '#DDDDDD', '#DDDDDD']
+        else:
+            new_color = color_scheme[self.color_cb.current()]
+        self.c_frame1.configure(bg=new_color[0])
+        self.c_frame2.configure(bg=new_color[1])
+        self.c_frame3.configure(bg=new_color[2])
+        self.c_frame4.configure(bg=new_color[3])
+
     def ok(self):
-        print(self.check_var1.get())
         if self.check_var1.get() == 1 and self.check_var2.get() == 0:
             self.result_list.append(1)
         elif self.check_var2.get() == 1 and self.check_var1.get() == 0:
@@ -995,6 +1020,8 @@ class ExportDialog:
         else:
             self.result_list.append(0)
         self.result_list.append(self.combo_var.get())
+        self.result_list.append(self.color_cb.current())
+        print(self.color_cb.current())
         self.rootWindow.destroy()
 
     def cancel(self):
