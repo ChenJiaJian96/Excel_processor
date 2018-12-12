@@ -24,8 +24,11 @@ option7 = "仅导出指定员工的“平均解决时长”情况"
 global ico_path
 ico_path = ".\CSPGCL.ico"
 global color_scheme
-color_scheme = [['#5B6C83', '#D7CCB8', '#38526E', '#BFBFBF'], ['#948A54', '#596166', "#A9BD8B", "#1C7B64"],
-                ['#1A7F9C', '#2DCFFF', '#104D60', "#229BBF"]]
+color_scheme = [['#5B6C83', '#D7CCB8', '#38526E', '#BFBFBF'], ['#948A54', '#596166', '#A9BD8B', '#1C7B64'],
+                ['#1A7F9C', '#2DCFFF', '#104D60', '#229BBF'], ['#c6c6bc', '#e3ddbd', '#d3c2ba', '#869f82'],
+                ['#e6a0c4', '#c6cdf7', '#d8a499', '#7294d4'], ['#5ec9db', '#fdc765', '#f27d51', '#6462cc']]
+color_scheme_name = ['达芬奇的左手', '路人甲的密码', '数据时代', '莫兰迪色图表', '马卡龙色图表', '孟菲斯风格图表']
+big_color_scheme = []
 rcParams['font.sans-serif'] = ['SimHei']
 
 
@@ -517,19 +520,20 @@ class MyGUI:
                 height = rect.get_height()
                 plt.text(rect.get_x() + rect.get_width() / 2, height + 1, str(height), ha="center", va="bottom")
         plt.tight_layout()
-        initial_filename = "员工各项标准得分情况统计表"
-        filename = filedialog.asksaveasfilename(title="保存文件",
-                                                filetype=[('图片文件', '*.png')],
-                                                defaultextension='.png',
-                                                initialfile=initial_filename)
-        try:
-            plt.savefig(filename)
-        except PermissionError:
-            self.write_log("权限出错，导出中断。")
-        except FileNotFoundError:
-            self.write_log("你点击了取消，导出中断。")
-        else:
-            self.write_log("导出图表成功，文件保存至：" + filename)
+        plt.show()
+        # initial_filename = "员工各项标准得分情况统计表"
+        # filename = filedialog.asksaveasfilename(title="保存文件",
+        #                                         filetype=[('图片文件', '*.png')],
+        #                                         defaultextension='.png',
+        #                                         initialfile=initial_filename)
+        # try:
+        #     plt.savefig(filename)
+        # except PermissionError:
+        #     self.write_log("权限出错，导出中断。")
+        # except FileNotFoundError:
+        #     self.write_log("你点击了取消，导出中断。")
+        # else:
+        #     self.write_log("导出图表成功，文件保存至：" + filename)
 
     # 根据数据导出个别图片
     def get_png_by_data(self, name_dict, png_element, color_scheme):
@@ -574,20 +578,19 @@ class MyGUI:
             height = rect.get_height()
             plt.text(rect.get_x() + rect.get_width() / 2, height + 1, str(height), ha="center", va="bottom")
         plt.tight_layout()
-        plt.show()
-        # initial_filename = png_element[7]
-        # filename = filedialog.asksaveasfilename(title="保存文件",
-        #                                         filetype=[('图片文件', '*.png')],
-        #                                         defaultextension='.png',
-        #                                         initialfile=initial_filename)
-        # try:
-        #     plt.savefig(filename)
-        # except PermissionError:
-        #     self.write_log("权限出错，导出中断。")
-        # except FileNotFoundError:
-        #     self.write_log("你点击了取消，导出中断。")
-        # else:
-        #     self.write_log("导出图表成功，文件保存至：" + filename)
+        initial_filename = png_element[7]
+        filename = filedialog.asksaveasfilename(title="保存文件",
+                                                filetype=[('图片文件', '*.png')],
+                                                defaultextension='.png',
+                                                initialfile=initial_filename)
+        try:
+            plt.savefig(filename)
+        except PermissionError:
+            self.write_log("权限出错，导出中断。")
+        except FileNotFoundError:
+            self.write_log("你点击了取消，导出中断。")
+        else:
+            self.write_log("导出图表成功，文件保存至：" + filename)
 
     # No.5:获取"客户平均满意度"数据
     def get_rate_ave_satisfied_data(self):
