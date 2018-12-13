@@ -14,7 +14,6 @@ from random import sample
 # 打包exe文件
 # pyinstaller -F -w main.py
 
-global option1, option2, option3, option4, option5, option6, option7
 option1 = "全部导出"
 option2 = "仅导出指定员工的“平均响应时长”情况"
 option3 = "仅导出指定员工的“响应超时率”情况"
@@ -22,12 +21,11 @@ option4 = "仅导出指定员工的“按时解决率”情况"
 option5 = "仅导出指定员工的“成功解决”情况"
 option6 = "仅导出指定员工的“平均满意度”情况"
 option7 = "仅导出指定员工的“平均解决时长”情况"
-global ico_path
 ico_path = ".\CSPGCL.ico"
 color_scheme = [['#1A7F9C', '#2DCFFF', '#104D60', '#229BBF'], ['#5B6C83', '#D7CCB8', '#38526E', '#BFBFBF'],
                 ['#948A54', '#596166', '#A9BD8B', '#1C7B64'], ['#c6c6bc', '#e3ddbd', '#d3c2ba', '#869f82'],
                 ['#e6a0c4', '#c6cdf7', '#d8a499', '#7294d4'], ['#5ec9db', '#fdc765', '#f27d51', '#6462cc']]
-color_scheme_name = ['数据时代', '达芬奇的左手', '路人甲的密码', '莫兰迪色图表', '马卡龙色图表', '孟菲斯风格图表']
+color_scheme_name = ['配色方案一', '配色方案二', '配色方案三', '配色方案四', '配色方案五', '配色方案六']
 big_color_scheme = ['#FFB6C1', '#FFC0CB', '#DC143C', '#FFF0F5', '#DB7093', '#FF69B4', '#FF1493', '#C71585', '#DA70D6',
                     '#D8BFD8', '#DDA0DD', '#EE82EE', '#FF00FF', '#FF00FF', '#8B008B', '#800080', '#BA55D3', '#9400D3',
                     '#9932CC', '#4B0082', '#8A2BE2', '#9370DB', '#7B68EE', '#6A5ACD', '#483D8B', '#E6E6FA', '#F8F8FF',
@@ -43,6 +41,7 @@ big_color_scheme = ['#FFB6C1', '#FFC0CB', '#DC143C', '#FFF0F5', '#DB7093', '#FF6
                     '#8B4513', '#FFF5EE', '#A0522D', '#FFA07A', '#FF7F50', '#FF4500', '#E9967A', '#FF6347', '#FFE4E1',
                     '#FA8072', '#FFFAFA', '#F08080', '#BC8F8F', '#CD5C5C', '#FF0000', '#A52A2A', '#B22222', '#8B0000',
                     '#800000', '#FFFFFF', '#F5F5F5', '#DCDCDC', '#D3D3D3', '#C0C0C0', '#A9A9A9', '#808080', '#696969']
+color_start_pos = [32, 106, 59, 61, 102, 3]
 rcParams['font.sans-serif'] = ['SimHei']
 
 
@@ -302,7 +301,7 @@ class MyGUI:
                 name_dict_list.append(self.get_rate_all_solved_data())
                 name_dict_list.append(self.get_rate_ave_satisfied_data())
                 name_dict_list.append(self.get_ave_solved_data())
-                self.get_total_png_by_data(name_list, name_dict_list, color_scheme[color_index])
+                self.get_total_png_by_data(name_list, name_dict_list, color_index)
             elif res[1] == option2:
                 name_dict = self.get_ave_response_data()
                 png_element = ["事件完成数", "事件响应总时长(h)", "事件平均响应时长(h)", "该项得分", "处理人", "数量（时长/得分）", "员工平均响应时长统计图表",
@@ -310,8 +309,8 @@ class MyGUI:
                 self.get_png_by_data(name_dict, png_element, color_scheme[color_index])
                 pass
             elif res[1] == option3:
-                name_dict = self.get_on_time_data()
-                png_element = ["事件完成数", "事件超时解决数", "事件超时解决率(%)", "该项得分", "处理人", "数量（得分）", "员工超时解决率统计图表", "员工超时解决率统计图表"]
+                name_dict = self.get_over_time_data()
+                png_element = ["事件完成数", "事件响应超时数", "事件响应超时率(%)", "该项得分", "处理人", "数量（得分）", "员工响应超时率统计图表", "员工响应超时率统计图表"]
                 self.get_png_by_data(name_dict, png_element, color_scheme[color_index])
             elif res[1] == option4:
                 name_dict = self.get_on_time_data()
@@ -374,7 +373,8 @@ class MyGUI:
             x = x + 1
             y = 0
 
-    # No.2:获取"事件超时解决率"的数据
+    # No.2:获取"事件响应超时率"的数据
+    # 根据反馈：事件响应超时率与事件按时解决率是相加为1的
     def get_over_time_data(self):
         temp_dict = self.data.get_name_dict()
         name_dict = {}
@@ -500,113 +500,7 @@ class MyGUI:
             x = x + 1
             y = 0
 
-    # 根据数据导出全部图片
-    def get_total_png_by_data(self, name_list, name_dict_list, color_scheme):
-        num_list_list = []
-        local_color = color_scheme
-        for name in name_list:
-            num_list = []
-            for cur_dict in name_dict_list:
-                num_list.append(cur_dict[name][3])
-            num_list_list.append(num_list)
-        if len(name_list) > len(local_color):
-            for color in sample(big_color_scheme, len(name_list) - len(local_color)):
-                local_color.append(color)
-        label_list = ["事件平均解决时长", "事件响应超时率", "事件按时解决率", "事件成功解决率", "客户平均满意度", "事件平均解决时长"]
-        x = range(len(label_list))
-        # 设置画布大小
-        plt.figure(figsize=(len(label_list) + 7, 5))
-        rect_list = []
-        rect_width = 1 / (len(name_list) + 1)
-        for m in range(len(name_list)):
-            rects = plt.bar(x=[i + rect_width * (m + 1) for i in x], height=num_list_list[m], width=rect_width,
-                            color=local_color[m], edgecolor='k', label=name_list[m])
-            rect_list.append(rects)
-        # 取值范围
-        plt.ylim(0, 105)
-        plt.xlim(0, len(label_list))
-        # 中点坐标，显示值
-        plt.xticks([index + 0.5 for index in x], label_list)
-        plt.xlabel("评判标准")
-        plt.ylabel("该项得分")
-        plt.title("员工各项标准得分")
-        plt.legend(bbox_to_anchor=(1.01, 1), loc=2, borderaxespad=0., handleheight=1.675)
-        #  编辑文本
-        for cur_rect in rect_list:
-            for rect in cur_rect:
-                height = rect.get_height()
-                plt.text(rect.get_x() + rect.get_width() / 2, height + 1, str(height), ha="center", va="bottom")
-        plt.tight_layout()
-        initial_filename = "员工各项标准得分情况统计表"
-        filename = filedialog.asksaveasfilename(title="保存文件",
-                                                filetype=[('图片文件', '*.png')],
-                                                defaultextension='.png',
-                                                initialfile=initial_filename)
-        try:
-            plt.savefig(filename)
-        except PermissionError:
-            self.write_log("权限出错，导出中断。")
-        except FileNotFoundError:
-            self.write_log("你点击了取消，导出中断。")
-        else:
-            self.write_log("导出图表成功，文件保存至：" + filename)
 
-    # 根据数据导出个别图片
-    def get_png_by_data(self, name_dict, png_element, color_scheme):
-        label_list, num_list1, num_list2, num_list3, num_list4 = [], [], [], [], []
-        for name in name_dict:
-            label_list.append(name)
-            num_list1.append(name_dict[name][0])
-            num_list2.append(name_dict[name][1])
-            num_list3.append(name_dict[name][2])
-            num_list4.append(name_dict[name][3])
-        x = range(len(label_list))
-        # 设置画布大小
-        plt.figure(figsize=(len(label_list) + 7, 5))
-        rects1 = plt.bar(x=[i + 0.2 for i in x], height=num_list1, width=0.2, color=color_scheme[0], edgecolor='k',
-                         label=png_element[0])
-        rects2 = plt.bar(x=[i + 0.4 for i in x], height=num_list2, width=0.2, color=color_scheme[1], edgecolor='k',
-                         label=png_element[1])
-        rects3 = plt.bar(x=[i + 0.6 for i in x], height=num_list3, width=0.2, color=color_scheme[2], edgecolor='k',
-                         label=png_element[2])
-        rects4 = plt.bar(x=[i + 0.8 for i in x], height=num_list4, width=0.2, color=color_scheme[3], edgecolor='k',
-                         label=png_element[3])
-        # 取值范围
-        plt.ylim(0, max(max(num_list1), 100) * 1.2)
-        plt.xlim(0, len(label_list))
-        # 中点坐标，显示值
-        plt.xticks([index + 0.5 for index in x], label_list)
-        plt.xlabel(png_element[4])
-        plt.ylabel(png_element[5])
-        plt.title(png_element[6])
-        plt.legend(bbox_to_anchor=(1.01, 1), loc=2, borderaxespad=0., handleheight=1.675)
-        #  编辑文本
-        for rect in rects1:
-            height = rect.get_height()
-            plt.text(rect.get_x() + rect.get_width() / 2, height + 1, str(height), ha="center", va="bottom")
-        for rect in rects2:
-            height = rect.get_height()
-            plt.text(rect.get_x() + rect.get_width() / 2, height + 1, str(height), ha="center", va="bottom")
-        for rect in rects3:
-            height = rect.get_height()
-            plt.text(rect.get_x() + rect.get_width() / 2, height + 1, str(height), ha="center", va="bottom")
-        for rect in rects4:
-            height = rect.get_height()
-            plt.text(rect.get_x() + rect.get_width() / 2, height + 1, str(height), ha="center", va="bottom")
-        plt.tight_layout()
-        initial_filename = png_element[7]
-        filename = filedialog.asksaveasfilename(title="保存文件",
-                                                filetype=[('图片文件', '*.png')],
-                                                defaultextension='.png',
-                                                initialfile=initial_filename)
-        try:
-            plt.savefig(filename)
-        except PermissionError:
-            self.write_log("权限出错，导出中断。")
-        except FileNotFoundError:
-            self.write_log("你点击了取消，导出中断。")
-        else:
-            self.write_log("导出图表成功，文件保存至：" + filename)
 
     # No.5:获取"客户平均满意度"数据
     def get_rate_ave_satisfied_data(self):
@@ -691,6 +585,117 @@ class MyGUI:
                 y = y + 1
             x = x + 1
             y = 0
+
+    # 根据数据导出全部图片
+    def get_total_png_by_data(self, name_list, name_dict_list, color_index):
+        num_list_list = []
+        local_color = color_scheme[color_index]
+        for name in name_list:
+            num_list = []
+            for cur_dict in name_dict_list:
+                num_list.append(cur_dict[name][3])
+            num_list_list.append(num_list)
+        if len(name_list) > len(local_color):
+            start_pos = color_start_pos[color_index]
+            for i in range(start_pos, start_pos + len(name_list) - len(local_color)):
+                local_color.append(big_color_scheme[i])
+        label_list = ["事件平均解决时长", "事件响应超时率", "事件按时解决率", "事件成功解决率", "客户平均满意度", "事件平均解决时长"]
+        x = range(len(label_list))
+        # 设置画布大小
+        plt.figure(figsize=(len(label_list) + 7, 5))
+        rect_list = []
+        rect_width = 1 / (len(name_list) + 1)
+        for m in range(len(name_list)):
+            rects = plt.bar(x=[i + rect_width * (m + 1) for i in x], height=num_list_list[m], width=rect_width,
+                            color=local_color[m], edgecolor='k', label=name_list[m])
+            rect_list.append(rects)
+        # 取值范围
+        plt.ylim(0, 105)
+        plt.xlim(0, len(label_list))
+        # 中点坐标，显示值
+        plt.xticks([index + 0.5 for index in x], label_list)
+        plt.xlabel("评判标准")
+        plt.ylabel("该项得分")
+        plt.title("员工各项标准得分")
+        plt.legend(bbox_to_anchor=(1.01, 1), loc=2, borderaxespad=0., handleheight=1.675)
+        #  编辑文本
+        for cur_rect in rect_list:
+            for rect in cur_rect:
+                height = rect.get_height()
+                plt.text(rect.get_x() + rect.get_width() / 2, height + 1, str(height), ha="center", va="bottom")
+        plt.tight_layout()
+        plt.show()
+        # initial_filename = "员工各项标准得分情况统计表"
+        # filename = filedialog.asksaveasfilename(title="保存文件",
+        #                                         filetype=[('图片文件', '*.png')],
+        #                                         defaultextension='.png',
+        #                                         initialfile=initial_filename)
+        # try:
+        #     plt.savefig(filename)
+        # except PermissionError:
+        #     self.write_log("权限出错，导出中断。")
+        # except FileNotFoundError:
+        #     self.write_log("你点击了取消，导出中断。")
+        # else:
+        #     self.write_log("导出图表成功，文件保存至：" + filename)
+
+    # 根据数据导出个别图片
+    def get_png_by_data(self, name_dict, png_element, color_scheme):
+        label_list, num_list1, num_list2, num_list3, num_list4 = [], [], [], [], []
+        for name in name_dict:
+            label_list.append(name)
+            num_list1.append(name_dict[name][0])
+            num_list2.append(round(name_dict[name][1], 1))
+            num_list3.append(round(name_dict[name][2], 1))
+            num_list4.append(name_dict[name][3])
+        x = range(len(label_list))
+        # 设置画布大小
+        plt.figure(figsize=(len(label_list) + 7, 5))
+        rects1 = plt.bar(x=[i + 0.2 for i in x], height=num_list1, width=0.2, color=color_scheme[0], edgecolor='k',
+                         label=png_element[0])
+        rects2 = plt.bar(x=[i + 0.4 for i in x], height=num_list2, width=0.2, color=color_scheme[1], edgecolor='k',
+                         label=png_element[1])
+        rects3 = plt.bar(x=[i + 0.6 for i in x], height=num_list3, width=0.2, color=color_scheme[2], edgecolor='k',
+                         label=png_element[2])
+        rects4 = plt.bar(x=[i + 0.8 for i in x], height=num_list4, width=0.2, color=color_scheme[3], edgecolor='k',
+                         label=png_element[3])
+        # 取值范围
+        plt.ylim(0, max(max(num_list1), int(max(num_list2)), 100) * 1.2)
+        plt.xlim(0, len(label_list))
+        # 中点坐标，显示值
+        plt.xticks([index + 0.5 for index in x], label_list)
+        plt.xlabel(png_element[4])
+        plt.ylabel(png_element[5])
+        plt.title(png_element[6])
+        plt.legend(bbox_to_anchor=(1.01, 1), loc=2, borderaxespad=0., handleheight=1.675)
+        #  编辑文本
+        for rect in rects1:
+            height = rect.get_height()
+            plt.text(rect.get_x() + rect.get_width() / 2, height + 1, str(height), ha="center", va="bottom")
+        for rect in rects2:
+            height = rect.get_height()
+            plt.text(rect.get_x() + rect.get_width() / 2, height + 1, str(height), ha="center", va="bottom")
+        for rect in rects3:
+            height = rect.get_height()
+            plt.text(rect.get_x() + rect.get_width() / 2, height + 1, str(height), ha="center", va="bottom")
+        for rect in rects4:
+            height = rect.get_height()
+            plt.text(rect.get_x() + rect.get_width() / 2, height + 1, str(height), ha="center", va="bottom")
+        plt.tight_layout()
+        plt.show()
+        # initial_filename = png_element[7]
+        # filename = filedialog.asksaveasfilename(title="保存文件",
+        #                                         filetype=[('图片文件', '*.png')],
+        #                                         defaultextension='.png',
+        #                                         initialfile=initial_filename)
+        # try:
+        #     plt.savefig(filename)
+        # except PermissionError:
+        #     self.write_log("权限出错，导出中断。")
+        # except FileNotFoundError:
+        #     self.write_log("你点击了取消，导出中断。")
+        # else:
+        #     self.write_log("导出图表成功，文件保存至：" + filename)
 
     # 添加日志
     def write_log(self, msg):  # 日志动态打印
@@ -1215,8 +1220,6 @@ class ExcelMaster:
                 send_list.append(str(datetime(*xldate_as_tuple(cell2, 0)).strftime('%Y/%m/%d %H:%M:%S')))
             else:
                 send_list.append(" ")
-        print(finish_list)
-        print(send_list)
         total_sec = 0
         for i in range(len(name_list)):
             if name_list[i] == name:
