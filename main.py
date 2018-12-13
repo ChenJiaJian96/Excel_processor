@@ -9,6 +9,7 @@ from collections import Counter
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
 from decimal import Decimal
+from random import sample
 
 # 打包exe文件
 # pyinstaller -F -w main.py
@@ -23,12 +24,25 @@ option6 = "仅导出指定员工的“平均满意度”情况"
 option7 = "仅导出指定员工的“平均解决时长”情况"
 global ico_path
 ico_path = ".\CSPGCL.ico"
-global color_scheme
 color_scheme = [['#1A7F9C', '#2DCFFF', '#104D60', '#229BBF'], ['#5B6C83', '#D7CCB8', '#38526E', '#BFBFBF'],
                 ['#948A54', '#596166', '#A9BD8B', '#1C7B64'], ['#c6c6bc', '#e3ddbd', '#d3c2ba', '#869f82'],
                 ['#e6a0c4', '#c6cdf7', '#d8a499', '#7294d4'], ['#5ec9db', '#fdc765', '#f27d51', '#6462cc']]
 color_scheme_name = ['数据时代', '达芬奇的左手', '路人甲的密码', '莫兰迪色图表', '马卡龙色图表', '孟菲斯风格图表']
-big_color_scheme = []
+big_color_scheme = ['#FFB6C1', '#FFC0CB', '#DC143C', '#FFF0F5', '#DB7093', '#FF69B4', '#FF1493', '#C71585', '#DA70D6',
+                    '#D8BFD8', '#DDA0DD', '#EE82EE', '#FF00FF', '#FF00FF', '#8B008B', '#800080', '#BA55D3', '#9400D3',
+                    '#9932CC', '#4B0082', '#8A2BE2', '#9370DB', '#7B68EE', '#6A5ACD', '#483D8B', '#E6E6FA', '#F8F8FF',
+                    '#0000FF', '#0000CD', '#191970', '#00008B', '#000080', '#4169E1', '#6495ED', '#B0C4DE', '#778899',
+                    '#708090', '#1E90FF', '#F0F8FF', '#4682B4', '#87CEFA', '#87CEEB', '#00BFFF', '#ADD8E6', '#B0E0E6',
+                    '#5F9EA0', '#E1FFFF', '#F0FFFF', '#AFEEEE', '#00FFFF', '#00FFFF', '#00CED1', '#2F4F4F', '#008B8B',
+                    '#008080', '#48D1CC', '#20B2AA', '#40E0D0', '#7FFFAA', '#00FA9A', '#F5FFFA', '#00FF7F', '#3CB371',
+                    '#2E8B57', '#F0FFF0', '#90EE90', '#98FB98', '#8FBC8F', '#32CD32', '#00FF00', '#228B22', '#008000',
+                    '#006400', '#7FFF00', '#7CFC00', '#ADFF2F', '#556B2F', '#6B8E23', '#FAFAD2', '#FFFFF0', '#FFFFE0',
+                    '#FFFF00', '#808000', '#BDB76B', '#FFFACD', '#EEE8AA', '#F0E68C', '#FFD700', '#FFF8DC', '#DAA520',
+                    '#FFFAF0', '#FDF5E6', '#F5DEB3', '#FFE4B5', '#FFA500', '#FFEFD5', '#FFEBCD', '#FFDEAD', '#FAEBD7',
+                    '#D2B48C', '#DEB887', '#FFE4C4', '#FF8C00', '#FAF0E6', '#CD853F', '#FFDAB9', '#F4A460', '#D2691E',
+                    '#8B4513', '#FFF5EE', '#A0522D', '#FFA07A', '#FF7F50', '#FF4500', '#E9967A', '#FF6347', '#FFE4E1',
+                    '#FA8072', '#FFFAFA', '#F08080', '#BC8F8F', '#CD5C5C', '#FF0000', '#A52A2A', '#B22222', '#8B0000',
+                    '#800000', '#FFFFFF', '#F5F5F5', '#DCDCDC', '#D3D3D3', '#C0C0C0', '#A9A9A9', '#808080', '#696969']
 rcParams['font.sans-serif'] = ['SimHei']
 
 
@@ -72,7 +86,7 @@ class MyGUI:
         self.init_window.iconbitmap(ico_path)
 
         self.log_label.place(relx=0.05, rely=0.05, relwidth=0.6, relheight=0.1)
-        self.operate_label.place(relx=0.7, rely=0.05, relwidth=0.2, relheight=0.1)
+        self.operate_label.place(relx=0.72, rely=0.05, relwidth=0.18, relheight=0.1)
         self.log_data_text.place(relx=0.05, rely=0.2, relwidth=0.62, relheight=0.73)
 
         self.open_file_button.place(relx=0.72, rely=0.18, relwidth=0.18, relheight=0.17)
@@ -95,8 +109,7 @@ class MyGUI:
         self.bottom_label.place(relx=0.4, rely=0.95, relwidth=0.2, relheight=0.05)
 
         self.set_button_state(0)
-        _time = localtime(time())
-        greetings = self.get_greetings(_time.tm_hour)
+        greetings = self.get_greetings(localtime(time()).tm_hour)
         self.write_log(greetings + ",请点击右侧“打开文件”按钮开始本次考核吧-->")
 
     # 打开文件
@@ -204,7 +217,7 @@ class MyGUI:
         res = self.open_export_dialog()
         print(res)
         if res is None:
-            self.write_log("你取消了导出操作")
+            self.write_log("你取消了导出")
         else:
             self.proceed_data(res)
 
@@ -289,7 +302,7 @@ class MyGUI:
                 name_dict_list.append(self.get_rate_all_solved_data())
                 name_dict_list.append(self.get_rate_ave_satisfied_data())
                 name_dict_list.append(self.get_ave_solved_data())
-                self.get_total_png_by_data(name_list, name_dict_list)
+                self.get_total_png_by_data(name_list, name_dict_list, color_scheme[color_index])
             elif res[1] == option2:
                 name_dict = self.get_ave_response_data()
                 png_element = ["事件完成数", "事件响应总时长(h)", "事件平均响应时长(h)", "该项得分", "处理人", "数量（时长/得分）", "员工平均响应时长统计图表",
@@ -488,14 +501,17 @@ class MyGUI:
             y = 0
 
     # 根据数据导出全部图片
-    def get_total_png_by_data(self, name_list, name_dict_list):
+    def get_total_png_by_data(self, name_list, name_dict_list, color_scheme):
         num_list_list = []
+        local_color = color_scheme
         for name in name_list:
             num_list = []
             for cur_dict in name_dict_list:
                 num_list.append(cur_dict[name][3])
             num_list_list.append(num_list)
-
+        if len(name_list) > len(local_color):
+            for color in sample(big_color_scheme, len(name_list) - len(local_color)):
+                local_color.append(color)
         label_list = ["事件平均解决时长", "事件响应超时率", "事件按时解决率", "事件成功解决率", "客户平均满意度", "事件平均解决时长"]
         x = range(len(label_list))
         # 设置画布大小
@@ -504,7 +520,7 @@ class MyGUI:
         rect_width = 1 / (len(name_list) + 1)
         for m in range(len(name_list)):
             rects = plt.bar(x=[i + rect_width * (m + 1) for i in x], height=num_list_list[m], width=rect_width,
-                            color='#4F94CD', edgecolor='k', label=name_list[m])
+                            color=local_color[m], edgecolor='k', label=name_list[m])
             rect_list.append(rects)
         # 取值范围
         plt.ylim(0, 105)
@@ -521,20 +537,19 @@ class MyGUI:
                 height = rect.get_height()
                 plt.text(rect.get_x() + rect.get_width() / 2, height + 1, str(height), ha="center", va="bottom")
         plt.tight_layout()
-        plt.show()
-        # initial_filename = "员工各项标准得分情况统计表"
-        # filename = filedialog.asksaveasfilename(title="保存文件",
-        #                                         filetype=[('图片文件', '*.png')],
-        #                                         defaultextension='.png',
-        #                                         initialfile=initial_filename)
-        # try:
-        #     plt.savefig(filename)
-        # except PermissionError:
-        #     self.write_log("权限出错，导出中断。")
-        # except FileNotFoundError:
-        #     self.write_log("你点击了取消，导出中断。")
-        # else:
-        #     self.write_log("导出图表成功，文件保存至：" + filename)
+        initial_filename = "员工各项标准得分情况统计表"
+        filename = filedialog.asksaveasfilename(title="保存文件",
+                                                filetype=[('图片文件', '*.png')],
+                                                defaultextension='.png',
+                                                initialfile=initial_filename)
+        try:
+            plt.savefig(filename)
+        except PermissionError:
+            self.write_log("权限出错，导出中断。")
+        except FileNotFoundError:
+            self.write_log("你点击了取消，导出中断。")
+        else:
+            self.write_log("导出图表成功，文件保存至：" + filename)
 
     # 根据数据导出个别图片
     def get_png_by_data(self, name_dict, png_element, color_scheme):
@@ -844,6 +859,8 @@ class ExaminerDialog:
         self.history_add_button.place(relx=0.85, rely=0.9, relwidth=0.1, relheight=0.08)
         if len(self.history_list) == 0:
             self.history_add_button.config(state=DISABLED)
+        else:
+            self.history_cb.current(0)
         # 对名单进行排序，优化用户体验
         self.refresh_name_list()
 
@@ -853,8 +870,7 @@ class ExaminerDialog:
             engine = SortEngine()
             self.name_list = engine.cnsort(self.name_list)
         except TypeError:
-            messagebox.showwarning("表格内容错误", "表格员工列中出现非法内容，导致列表无法自动排序\n"
-                                             "——非法字符包括数字、空格等，请自行删除。")
+            messagebox.showwarning("表格内容错误", "出现非法内容，名单无法自动排序")
         for item in self.name_list:
             self.name_list_box.insert(END, item)
 
@@ -949,7 +965,7 @@ class ExportDialog:
         self.check_var2 = IntVar()
         self.xls_cb = Checkbutton(self.rootWindow, text="导出文档", variable=self.check_var1, onvalue=1, offvalue=0,
                                   command=self.call_xls)
-        self.img_cb = Checkbutton(self.rootWindow, text="仅导出图片", variable=self.check_var2, onvalue=1, offvalue=0,
+        self.img_cb = Checkbutton(self.rootWindow, text="导出图片", variable=self.check_var2, onvalue=1, offvalue=0,
                                   command=self.call_img)
         self.xls_cb.select()
         self.combo_var = StringVar()
@@ -1004,7 +1020,7 @@ class ExportDialog:
 
     def update_c_frame(self, i):
         if i == -1:
-            new_color = ['#DDDDDD', '#DDDDDD', '#DDDDDD', '#DDDDDD']
+            new_color = ['#F0F0F0', '#F0F0F0', '#F0F0F0', '#F0F0F0']
         else:
             new_color = color_scheme[self.color_cb.current()]
         self.c_frame1.configure(bg=new_color[0])
@@ -1086,7 +1102,7 @@ class InstructionDialog:
 
         self.guide_button = Button(self.rootWindow, text="使用流程", command=lambda: self.update_text(1))
         self.quest_button = Button(self.rootWindow, text="常见问题", command=lambda: self.update_text(2))
-        self.wel_text = "欢迎查阅使用流程及常见问题\n\n请点击上面按钮进行查询↑↑↑"
+        self.wel_text = MyGUI.get_greetings(localtime(time()).tm_hour) + ",欢迎查阅使用流程及常见问题\n\n请点击上面按钮进行查询↑↑↑"
         self.guide_text = "使用说明\n\n" \
                           "一、使用流程\n" \
                           "打开文件->修改考核人员名单->导出文件->退出系统\n\n" \
@@ -1100,15 +1116,33 @@ class InstructionDialog:
                           "导出文件会按照选择的考核名单进行针对性导出；\n" \
                           "3.2--在成功导入完整数据文件后，会直接进入修改考核人员名单的界面，而在导出文件前的任意时刻也可以选择更改，" \
                           "若使用者在选择界面中未选择任何人员，会默认保持为最近一次的名单；\n" \
-                          "3.3--修改考核人员名单界面中，用户可以在左侧的名单列表中选择需要添加的名单，点击添加按钮即可添加，" \
-                          "添加成功后的人员会显示在右侧栏，相应地，可以选择删除对应人员名单；\n" \
-                          "3.4--上述界面搜索功能，用户可以在位于界面上侧搜索栏搜索对应人员，并执行后续操作，当搜索栏为空并选择‘搜索’按钮后，" \
+                          "3.3--修改考核人员名单界面中，用户可以在左侧的名单列表中选择需要添加的名单，点击【添加】按钮即可添加，" \
+                          "添加成功后的人员会显示在右侧栏，相应地，可以选择【删除】对应人员名单；\n" \
+                          "3.4--上述界面搜索功能，用户可以在位于界面上侧搜索栏搜索对应人员，并执行后续操作，当搜索栏为空并选择【搜索】按钮后，" \
                           "名单会从搜索特定名单恢复为全部名单；\n" \
-                          "3.5--完成选择后点击确认按钮返回主界面，并完成考核名单的修改。\n\n" \
-                          "四、导出文件\n" \
-                          "4.1--在导出文件弹窗中balabala"
+                          "3.5--完成选择后点击确认按钮返回主界面，并完成考核名单的修改；\n" \
+                          "3.6--在软件未关闭的情况下，软件会保存用户的选择记录，用户可以在下拉框中选择需要添加的员工，点击【↑↑】按钮即可添加。\n\n" \
+                          "四、导出设置\n" \
+                          "4.1--在导出文件弹窗中，用户可以首先选择文件导出格式，主要分为‘文档’及‘图片’两种形式；\n" \
+                          "4.2--根据需求，两种形式的导出均具备相同的导出内容，请用户在导出内容下拉框中选择；\n" \
+                          "4.3--若导出图片，用户可以选择图片的配色方案，请用户在选择配色方案下拉框中选择；\n" \
+                          "4.4--点击【确认】按钮进行导出，用户按照界面提示确认导出位置及文件名即可导出。\n\n" \
+                          "五、主界面快捷按钮说明\n" \
+                          "5.1--【...】按钮：显示该管理系统的评分标准；\n" \
+                          "5.2--【？】按钮：显示使用流程及常见问题弹窗；\n" \
+                          "5.3--【！】按钮：显示软件版权信息。"
         self.quest_text = "常见问题说明\n\n" \
-                          "1.为什么选择考核名单弹窗->表格名单中"
+                          "Q1.为什么有些按钮无法点击？\n" \
+                          "A1.在所需数据缺失情况下软件会禁用部分按钮，请按照正确使用流程操作。\n\n" \
+                          "Q2.请打开正确格式的文件\n" \
+                          "A2.该软件仅能打开.xlsx/.xls/.et等表格文件，请检查打开文件格式。\n\n" \
+                          "Q3.打开的文件中找不到列\n" \
+                          "A3.请检查文件中所对应列是否存在，列名是否正确，列名是否在第一行。\n\n" \
+                          "Q4.权限出错，导出中断\n" \
+                          "A4.请检查文件夹中是否存在同文件名文件，因原文件正在打开导致无法覆盖。\n\n" \
+                          "Q5.表格内容错误，名单无法排序\n" \
+                          "A5.非法字符包括数字、空格等，请检查打开文件自行删除。\n\n" \
+                          "其他问题请重启软件，无法解决请联系开发者。"
         self.content_text = scrolledtext.ScrolledText(self.rootWindow, wrap=WORD)
         self.box_scrollbar_y = Scrollbar(self.rootWindow)
 
