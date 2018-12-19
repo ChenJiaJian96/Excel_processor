@@ -9,7 +9,6 @@ from collections import Counter
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
 from decimal import Decimal
-from random import sample
 
 # 打包exe文件
 # pyinstaller -F -w main.py
@@ -500,8 +499,6 @@ class MyGUI:
             x = x + 1
             y = 0
 
-
-
     # No.5:获取"客户平均满意度"数据
     def get_rate_ave_satisfied_data(self):
         temp_dict = self.data.get_name_dict()
@@ -624,23 +621,22 @@ class MyGUI:
                 height = rect.get_height()
                 plt.text(rect.get_x() + rect.get_width() / 2, height + 1, str(height), ha="center", va="bottom")
         plt.tight_layout()
-        plt.show()
-        # initial_filename = "员工各项标准得分情况统计表"
-        # filename = filedialog.asksaveasfilename(title="保存文件",
-        #                                         filetype=[('图片文件', '*.png')],
-        #                                         defaultextension='.png',
-        #                                         initialfile=initial_filename)
-        # try:
-        #     plt.savefig(filename)
-        # except PermissionError:
-        #     self.write_log("权限出错，导出中断。")
-        # except FileNotFoundError:
-        #     self.write_log("你点击了取消，导出中断。")
-        # else:
-        #     self.write_log("导出图表成功，文件保存至：" + filename)
+        initial_filename = "员工各项标准得分情况统计表"
+        filename = filedialog.asksaveasfilename(title="保存文件",
+                                                filetype=[('图片文件', '*.png')],
+                                                defaultextension='.png',
+                                                initialfile=initial_filename)
+        try:
+            plt.savefig(filename)
+        except PermissionError:
+            self.write_log("权限出错，导出中断。")
+        except FileNotFoundError:
+            self.write_log("你点击了取消，导出中断。")
+        else:
+            self.write_log("导出图表成功，文件保存至：" + filename)
 
     # 根据数据导出个别图片
-    def get_png_by_data(self, name_dict, png_element, color_scheme):
+    def get_png_by_data(self, name_dict, png_element, local_color_scheme):
         label_list, num_list1, num_list2, num_list3, num_list4 = [], [], [], [], []
         for name in name_dict:
             label_list.append(name)
@@ -651,14 +647,14 @@ class MyGUI:
         x = range(len(label_list))
         # 设置画布大小
         plt.figure(figsize=(len(label_list) + 7, 5))
-        rects1 = plt.bar(x=[i + 0.2 for i in x], height=num_list1, width=0.2, color=color_scheme[0], edgecolor='k',
-                         label=png_element[0])
-        rects2 = plt.bar(x=[i + 0.4 for i in x], height=num_list2, width=0.2, color=color_scheme[1], edgecolor='k',
-                         label=png_element[1])
-        rects3 = plt.bar(x=[i + 0.6 for i in x], height=num_list3, width=0.2, color=color_scheme[2], edgecolor='k',
-                         label=png_element[2])
-        rects4 = plt.bar(x=[i + 0.8 for i in x], height=num_list4, width=0.2, color=color_scheme[3], edgecolor='k',
-                         label=png_element[3])
+        rects1 = plt.bar(x=[i + 0.2 for i in x], height=num_list1, width=0.2, color=local_color_scheme[0],
+                         edgecolor='k', label=png_element[0])
+        rects2 = plt.bar(x=[i + 0.4 for i in x], height=num_list2, width=0.2, color=local_color_scheme[1],
+                         edgecolor='k', label=png_element[1])
+        rects3 = plt.bar(x=[i + 0.6 for i in x], height=num_list3, width=0.2, color=local_color_scheme[2],
+                         edgecolor='k', label=png_element[2])
+        rects4 = plt.bar(x=[i + 0.8 for i in x], height=num_list4, width=0.2, color=local_color_scheme[3],
+                         edgecolor='k', label=png_element[3])
         # 取值范围
         plt.ylim(0, max(max(num_list1), int(max(num_list2)), 100) * 1.2)
         plt.xlim(0, len(label_list))
@@ -682,20 +678,19 @@ class MyGUI:
             height = rect.get_height()
             plt.text(rect.get_x() + rect.get_width() / 2, height + 1, str(height), ha="center", va="bottom")
         plt.tight_layout()
-        plt.show()
-        # initial_filename = png_element[7]
-        # filename = filedialog.asksaveasfilename(title="保存文件",
-        #                                         filetype=[('图片文件', '*.png')],
-        #                                         defaultextension='.png',
-        #                                         initialfile=initial_filename)
-        # try:
-        #     plt.savefig(filename)
-        # except PermissionError:
-        #     self.write_log("权限出错，导出中断。")
-        # except FileNotFoundError:
-        #     self.write_log("你点击了取消，导出中断。")
-        # else:
-        #     self.write_log("导出图表成功，文件保存至：" + filename)
+        initial_filename = png_element[7]
+        filename = filedialog.asksaveasfilename(title="保存文件",
+                                                filetype=[('图片文件', '*.png')],
+                                                defaultextension='.png',
+                                                initialfile=initial_filename)
+        try:
+            plt.savefig(filename)
+        except PermissionError:
+            self.write_log("权限出错，导出中断。")
+        except FileNotFoundError:
+            self.write_log("你点击了取消，导出中断。")
+        else:
+            self.write_log("导出图表成功，文件保存至：" + filename)
 
     # 添加日志
     def write_log(self, msg):  # 日志动态打印
@@ -1353,35 +1348,36 @@ class SortEngine:
 
     ###############################
     # 辞典查找函数
-    def searchdict(self, dic, uchar):
+    @staticmethod
+    def searchdict(dic, uchar):
         if u'\u4e00' <= uchar <= u'\u9fa5':
             value = dic.get(uchar)
-            if value == None:
+            if value is None:
                 value = '*'
         else:
             value = uchar
         return value
 
     # 比较单个字符
-    def comp_char_PY(self, A, B):
-        if A == B:
+    def comp_char_py(self, a, b):
+        if a == b:
             return -1
-        pyA = self.searchdict(self.dic_py, A)
-        pyB = self.searchdict(self.dic_py, B)
+        pya = self.searchdict(self.dic_py, a)
+        pyb = self.searchdict(self.dic_py, b)
 
         # 比较拼音
-        if pyA > pyB:
+        if pya > pyb:
             return 1
-        elif pyA < pyB:
+        elif pya < pyb:
             return 0
 
         # 比较笔画
         else:
-            bhA = eval(self.searchdict(self.dic_bh, A))
-            bhB = eval(self.searchdict(self.dic_bh, B))
-            if bhA > bhB:
+            bha = eval(self.searchdict(self.dic_bh, a))
+            bhb = eval(self.searchdict(self.dic_bh, b))
+            if bha > bhb:
                 return 1
-            elif bhA < bhB:
+            elif bha < bhb:
                 return 0
             else:
                 return "拼音相同，笔画也相同？"
@@ -1392,7 +1388,7 @@ class SortEngine:
         n = min(len(A), len(B))
         i = 0
         while i < n:
-            dd = self.comp_char_PY(A[i], B[i])
+            dd = self.comp_char_py(A[i], B[i])
             # 如果第一个单词相等，就继续比较下一个单词
             if dd == -1:
                 i = i + 1
